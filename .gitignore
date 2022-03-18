@@ -145,3 +145,5 @@ tmp/
 
 # ignore virtual environment
 env/
+#temp
+tmp/

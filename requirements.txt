@@ -1,7 +1,26 @@
+#base
 Django>=2.1.3,<4.0.3
 djangorestframework>=3.9.0,<3.13.1
-psycopg2-binary>=2.9.1,<2.9.3
 django-rest-authtoken>=2.0.0,<2.1.4 
 django-filter>=2.2.0,<21.1 
+django-cors-headers>3.8.0,<3.11.0 
 
+# database
+dj-database-url>=0.4.0,<0.5.0
+psycopg2-binary>=2.9.1,<2.9.3
+
+# environment
+django-environ>=0.7.0, <0.8.1 
+
+# production
+gunicorn>=20.0.4, <20.1.0 
+whitenoise>=5.0, <6.0.0 
+
+# test
+selenium>=4.0.0, <4.1.3 
+coverage>=6.2 ,<6.3.2 
+
+# linter
+autopep8>=1.5.5, <1.6.0 
+pycodestyle>=2.6.0, <2.8.0 
 flake8>=3.9.0,<4.0.1

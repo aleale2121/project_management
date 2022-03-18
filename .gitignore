@@ -26,6 +26,11 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+media
+*.log
+*.pot
+*.pyc
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -130,3 +135,13 @@ dmypy.json
 
 # Idea
 .idea/
+
+# Vscode
+.vscode/
+
+# ignore staticfiles for whitenoise
+staticfiles/
+tmp/
+
+# ignore virtual environment
+env/

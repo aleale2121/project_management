@@ -19,7 +19,7 @@ UnitTest:
     - SSLCONF="?sslmode=require"
     - echo "$TEST_DATABASE_URL$SSLCONF"
     # -----------DEPENDS ON YOUR DJANGO APP NAMES---------
-    - DATABASE_URL="$TEST_DATABASE_URL$SSLCONF" coverage run --branch --source=users  manage.py test --keepdb
+    - DATABASE_URL="$TEST_DATABASE_URL$SSLCONF" coverage run --branch --source=users  app/manage.py test --keepdb
     # ----------------------------------------------------
     - coverage xml -i
     - coverage report -m

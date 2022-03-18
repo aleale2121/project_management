@@ -1,5 +1,5 @@
 FROM python:3.10-alpine
-LABEL Author = SiteGroup5 Developers
+LABEL Author = SiteGroup5-Developers
 
 ENV PYTHONUNBUFFERED 1
 

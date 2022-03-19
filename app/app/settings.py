@@ -98,13 +98,13 @@ DATABASES = {
 #     }
 # }
 # Heroku: Update database configuration from $DATABASE_URL.
-DATABASE_URL = os.environ.get('DATABASE_URL')
+# DATABASE_URL = os.environ.get('DATABASE_URL')
 # print(DATABASE_URL)
 
-db_from_env = dj_database_url.parse(
-    DATABASE_URL,
-engine='django.db.backends.postgresql',conn_max_age=500)
-DATABASES['default'].update(db_from_env)
+# db_from_env = dj_database_url.parse(
+#     DATABASE_URL,
+# engine='django.db.backends.postgresql',conn_max_age=500)
+# DATABASES['default'].update(db_from_env)
 
 
 # Password validation

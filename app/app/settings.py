@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import os
+from defusedxml import DTDForbidden
 import environ
 import dj_database_url
 
@@ -100,8 +101,10 @@ DATABASES = {
 # Heroku: Update database configuration from $DATABASE_URL.
 DATABASE_URL = os.environ.get('DATABASE_URL')
 print(DATABASE_URL)
-db_from_env = dj_database_url.config(default=DATABASE_URL, conn_max_age=500)
-DATABASES['default'].update(db_from_env)
+# db_from_env = dj_database_url.config(default=DATABASE_URL, conn_max_age=500)
+# DATABASES['default'].update(db_from_env)
+DATABASES['default'] = dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 

@@ -147,3 +147,5 @@ tmp/
 env/
 #temp
 tmp/
+
+Makefile

@@ -5,6 +5,9 @@ stages:
 UnitTest:
   image: python:3.8.10
   stage: test
+  variables:
+    DATABASE_URL: postgres://hnipzlbgwdnqyz:24214279fcbfd416ba812ae79f6d27905038d15408b6889906e0ebf7cdccc7c4@ec2-54-226-18-238.compute-1.amazonaws.com:5432/d7hl55edumoqi3
+    TEST_DATABASE_URL: postgres://suhgpimksigljo:6c41b88ac2a003c2e6e2f443798d16968e64a2be9c4cd3fa7d862a5cbc91a951@ec2-54-226-18-238.compute-1.amazonaws.com:5432/d2debaob0f9510
   before_script:
     - pip install -r requirements.txt
     - python app/manage.py makemigrations

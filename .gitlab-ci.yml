@@ -44,4 +44,4 @@ DeploymentStaging:
     changes:
       - "README.md"
   only:
-    - master
+    - dev

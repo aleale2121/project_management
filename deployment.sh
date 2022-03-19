@@ -1,3 +1,3 @@
 #!/bin/bash
-python manage.py makemigrations
-python manage.py migrate
+python app/manage.py makemigrations
+python app/manage.py migrate

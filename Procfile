@@ -1,2 +1,2 @@
 migrate: bash deployment.sh
-web: app.wsgi --log-file -
+web: sfpm-backed/app.wsgi --log-file -

@@ -6,7 +6,7 @@ services:
 before_script:
   # Add Docker-compose to Docker image
   - apk add --no-cache py-pip
-  - pip install docker-compose==latest
+  - pip install docker-compose==1.25.0
   - docker info
   - docker-compose --version
 

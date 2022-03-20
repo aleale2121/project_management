@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - local-var.env
+    volumes:
+      - ./app:/app
+    command: sh -c "python app/manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - db
+    links:
+      - db:db
+    networks:
+      - djangonetwork
+  db:
+    image: postgres
+    networks:
+      - djangonetwork
+
+  deploy_staging:
+    build: .
+    env_file:
+      - deploy-staging-var.env
+
+  deploy_production:
+    build: .
+    env_file:
+      - deploy-production-var.env
+networks:
+    djangonetwork:
+        driver: bridge

@@ -14,7 +14,7 @@ environ.Env.read_env('.env')
 SECRET_KEY = 'django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*%tu7wd6t90b8'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     "localhost",
@@ -87,23 +87,30 @@ WSGI_APPLICATION = 'app.wsgi.application'
 #         'PASSWORD': os.environ.get('DB_PASS'),
 #     }
 # }
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        'TEST': {
-            'NAME': os.environ.get('TEST_DATABASE'),
-        },
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.environ.get('DATABASE_NAME'),
+        'USER': os.environ.get('DATABASE_USER'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+        'HOST': os.environ.get('DATABASE_HOST'),
+        'PORT': os.environ.get('DATABASE_PORT'),
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#         'TEST': {
+#             'NAME': os.environ.get('TEST_DATABASE'),
+#         },
+#     }
+# }
 # Heroku: Update database configuration from $DATABASE_URL.
-# DATABASE_URL = os.environ.get('DATABASE_URL')
-# print(DATABASE_URL)
 
-db_from_env = dj_database_url.config(
-engine='django.db.backends.postgresql',conn_max_age=600)
-DATABASES['default'].update(db_from_env)
+# db_from_env = dj_database_url.config(
+# engine='django.db.backends.postgresql',conn_max_age=600)
+# DATABASES['default'].update(db_from_env)
 
 
 # Password validation

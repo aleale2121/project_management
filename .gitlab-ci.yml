@@ -1,47 +1,68 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
+before_script:
+  # Add Docker-compose to Docker image
+  - apk add --no-cache py-pip
+  - pip install docker-compose==latest
+  - docker info
+  - docker-compose --version
+
 stages:
   - test
+  - build
   - deploy
 
-UnitTest:
-  image: python:3.8.10
-  stage: test
-  before_script:
-    - pip install -r requirements.txt
-    - python app/manage.py makemigrations
-    - python app/manage.py migrate
-    - python app/manage.py collectstatic --no-input
-    - python app/manage.py runserver 8000 &
-  when: on_success
-  script:
-    - echo "Starting tests..."
-    - rm -f coverage.xml
-    - coverage erase
-    - SSLCONF="?sslmode=require"
-    - echo "$TEST_DATABASE_URL$SSLCONF"
-    # -----------DEPENDS ON YOUR DJANGO APP NAMES---------
-    - DATABASE_URL="$TEST_DATABASE_URL$SSLCONF" coverage run --branch --source=users  app/manage.py test --keepdb
-    # ----------------------------------------------------
-    - coverage xml -i
-    - coverage report -m
-  artifacts:
-    paths:
-      - coverage.xml
+variables:
+    HEROKU_API_KEY: 256e6ae5-7e47-408b-a16d-19615346239b
+    HEROKU_STAGING_APP: sfpm-backend
+    HEROKU_PRODUCTION_APP: sfpm-backend
+    POSTGRES_USER: postgres
+    REGISTRY_NAME: registry.gitlab.com/site-group5/sfpm-backend
+    CONTAINER_IMAGE: REGISTRY_NAME:$CI_BUILD_REF_NAME
 
-DeploymentStaging:
-  image: ruby:3.1.0
-  stage: deploy
-  before_script:
-    - gem install dpl
-    - wget -qO- https://cli-assets.heroku.com/install-ubuntu.sh | sh
+
+test:
+  stage: test
   script:
-    - dpl --provider=heroku --app=$HEROKU_APPNAME --api-key=$HEROKU_APIKEY
-    - export HEROKU_API_KEY=$HEROKU_APIKEY
-    - heroku run --app $HEROKU_APPNAME migrate
-  environment:
-    name: staging
-    url: $HEROKU_APP_HOST
-  except:
-    changes:
-      - "README.md"
+    - echo "Starting tests"
+    - docker-compose run web sh -c "python manage.py test"
+
+build:
+  stage: build
+  script:
+    - echo "Building the app"
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - docker build -t $CONTAINER_IMAGE .
+    - docker push $CONTAINER_IMAGE
+
+
+deploy_staging:
+  stage: deploy
   only:
-    - dev
+  - dev
+  script:
+    - echo "Deploying the app"
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - docker login --username=_ --password=$HEROKU_API_KEY registry.heroku.com
+    - docker pull $CONTAINER_IMAGE
+    - docker tag $CONTAINER_IMAGE registry.heroku.com/$HEROKU_STAGING_APP/web
+    - docker-compose run deploy_staging sh -c "python manage.py migrate"
+    - docker push registry.heroku.com/$HEROKU_STAGING_APP/web
+    - docker run --rm -e HEROKU_API_KEY=$HEROKU_API_KEY wingrunr21/alpine-heroku-cli container:release web --app $HEROKU_STAGING_APP
+
+deploy_production:
+  stage: deploy
+  only:
+  - production
+  script:
+    - echo "Deploying the app"
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - docker login --username=_ --password=$HEROKU_API_KEY registry.heroku.com
+    - docker pull $CONTAINER_IMAGE
+    - docker tag $CONTAINER_IMAGE registry.heroku.com/HEROKU_PRODUCTION_APP/web
+    - docker-compose run deploy_production sh -c "python manage.py migrate"
+    - docker push registry.heroku.com/HEROKU_PRODUCTION_APP/web
+    - docker run --rm -e HEROKU_API_KEY=$HEROKU_API_KEY wingrunr21/alpine-heroku-cli container:release web --app HEROKU_PRODUCTION_APP

@@ -44,9 +44,8 @@ test:
     DATABASE_URL: postgresql://runner@postgres:5432/test
   script:
     - python app/manage.py test
-    - flake8 sfpm-backend  --max-line-length=100
-    - black sfpm-backend --check
-    - isort sfpm-backend --check --profile black
+    - flake8 --max-line-length=100
+    - black . --check
 
 deploy:
   stage: deploy

@@ -14,10 +14,15 @@ from rest_framework.viewsets import ModelViewSet
 
 from core.models import Batch, Student, User
 from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff, IsStudent
-from users.serializers import (AuthTokenSerializer, BatchSerializer,
-                               StaffRegistrationSerializer, StaffSerializer,
-                               StudentRegistrationSerializer,
-                               StudentSerializer, UserSerializer)
+from users.serializers import (
+    AuthTokenSerializer,
+    BatchSerializer,
+    StaffRegistrationSerializer,
+    StaffSerializer,
+    StudentRegistrationSerializer,
+    StudentSerializer,
+    UserSerializer,
+)
 
 fs = FileSystemStorage(location="tmp/")
 

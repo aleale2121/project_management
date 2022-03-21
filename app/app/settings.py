@@ -19,7 +19,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
 # DEBUG = True
 DEBUG = int(os.environ.get("DEBUG", default=0))
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm-backend.herokuapp.com"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm.herokuapp.com"]
 
 # Application definition
 

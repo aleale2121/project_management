@@ -1,15 +1,24 @@
+FROM python:3.10-alpine AS build-python
+RUN apk update && apk add --virtual build-essential gcc python3-dev musl-dev postgresql-dev \ 
+    git libffi-dev libpq-dev libc-dev linux-headers
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+COPY ./requirements.txt /requirements.txt
+RUN pip install -r ./requirements.txt
+
+
 FROM python:3.10-alpine
 LABEL Author = SiteGroup5
 
-RUN mkdir /app
-WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV DEBUG 0
 
+ENV PATH="/opt/venv/bin:$PATH"
+COPY --from=build-python /opt/venv /opt/venv
 RUN apk update \
-    && apk add postgresql-dev gcc python3-dev \
+    && apk add --virtual build-deps postgresql-dev gcc python3-dev \
     musl-dev postgresql-client git \
     libpq-dev libc-dev linux-headers \
     libffi-dev python3-dev
@@ -17,10 +26,12 @@ RUN apk update \
 
 
 RUN pip install --upgrade pip
-RUN pip install psycopg2
+RUN pip install psycopg2-binary
 
-COPY ./requirements.txt /requirements.txt
-RUN pip install -r ../requirements.txt
+RUN mkdir /app
+WORKDIR /app
+# COPY ./requirements.txt /requirements.txt
+# RUN pip install -r ../requirements.txt
 
 COPY ./app /app
 

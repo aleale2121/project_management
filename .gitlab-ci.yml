@@ -43,7 +43,7 @@ test:
     POSTGRES_PASSWORD: ""
     DATABASE_URL: postgresql://runner@postgres:5432/test
   script:
-    - python manage.py test
+    - python app/manage.py test
     - flake8 sfpm-backend  --max-line-length=100
     - black sfpm-backend --check
     - isort sfpm-backend --check --profile black

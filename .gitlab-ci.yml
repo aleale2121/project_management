@@ -45,7 +45,6 @@ test:
   script:
     - python app/manage.py test
     - flake8 --max-line-length=100
-    - black . --check
 
 deploy:
   stage: deploy

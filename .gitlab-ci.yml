@@ -51,5 +51,7 @@ deploy:
   script:
     - apt-get update -qy
     - apt-get install -y ruby-dev
-    - gem install dpl
+    - gem install dpl --pre
+    - gem install bundler
+    - yarn install
     - dpl --provider=heroku --app=$HEROKU_APP_NAME --api-key=$HEROKU_AUTH_TOKEN

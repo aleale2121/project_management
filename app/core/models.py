@@ -1,11 +1,10 @@
+from django.conf import settings
+from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
+                                        PermissionsMixin)
 from django.db import models
 from django.db.models.signals import post_save
-from django.conf import settings
 from django.dispatch import receiver
-
 from rest_framework.authtoken.models import Token
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
-    PermissionsMixin
 
 
 class Batch(models.Model):
@@ -20,9 +19,11 @@ class UserManager(BaseUserManager):
     def create_user(self, username, email, password=None, **extra_fields):
         """Creates and save a new user"""
         if not email:
-            raise ValueError('Users must have an email address.')
+            raise ValueError("Users must have an email address.")
 
-        user = self.model(username=username, email=self.normalize_email(email), **extra_fields)
+        user = self.model(
+            username=username, email=self.normalize_email(email), **extra_fields
+        )
         user.set_password(password)
         user.save(using=self._db)
 
@@ -40,21 +41,17 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=25, unique=True)
-    email = models.EmailField(
-        max_length=255,
-        unique=True,
-        verbose_name='email',
-    )
-    name = models.CharField(max_length=255, default='')
+    email = models.EmailField(max_length=255, unique=True, verbose_name="email")
+    name = models.CharField(max_length=255, default="")
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_student = models.BooleanField(default=False)
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'username'
+    USERNAME_FIELD = "username"
     EMAIL_FIELD = "email"
-    REQUIRED_FIELDS = ['email', ]
+    REQUIRED_FIELDS = ["email"]
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)

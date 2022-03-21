@@ -1,27 +1,25 @@
 import csv
 
+from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import get_object_or_404
-
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import APIView, ObtainAuthToken
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.settings import api_settings
+from rest_framework.viewsets import ModelViewSet
 
 from core.models import Batch, Student, User
-from users.serializers import BatchSerializer, StaffSerializer, StudentSerializer, UserSerializer, \
-    StaffRegistrationSerializer, StudentRegistrationSerializer, AuthTokenSerializer
+from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff, IsStudent
+from users.serializers import (AuthTokenSerializer, BatchSerializer,
+                               StaffRegistrationSerializer, StaffSerializer,
+                               StudentRegistrationSerializer,
+                               StudentSerializer, UserSerializer)
 
-from rest_framework.authtoken.views import ObtainAuthToken, APIView
-from rest_framework.authtoken.models import Token
-from django.contrib.auth.base_user import BaseUserManager
-from rest_framework.settings import api_settings
-from rest_framework.response import Response
-from core.permissions import IsAdmin, IsStudent, IsStaff, IsAdminOrReadOnly
-from rest_framework.viewsets import ModelViewSet
-from rest_framework import viewsets
-from rest_framework.response import Response
-from rest_framework.decorators import action
-
-fs = FileSystemStorage(location='tmp/')
+fs = FileSystemStorage(location="tmp/")
 
 
 class BatchModelViewSet(ModelViewSet):
@@ -41,11 +39,13 @@ class StaffRegistrationView(generics.GenericAPIView):
         staff_serialize = StaffSerializer(staff)
         data = staff_serialize.data
 
-        return Response({
-            "user_info": data,
-            "token": Token.objects.get(user=staff.user).key,
-            "message": "account created successfully"
-        })
+        return Response(
+            {
+                "user_info": data,
+                "token": Token.objects.get(user=staff.user).key,
+                "message": "account created successfully",
+            }
+        )
 
 
 class StudentRegistrationView(generics.GenericAPIView):
@@ -58,33 +58,34 @@ class StudentRegistrationView(generics.GenericAPIView):
         student_serialize = StudentSerializer(student)
         data = student_serialize.data
 
-        return Response({
-            "user_info": data,
-            "token": Token.objects.get(user=student.user).key,
-            "message": "account created successfully"
-        })
+        return Response(
+            {
+                "user_info": data,
+                "token": Token.objects.get(user=student.user).key,
+                "message": "account created successfully",
+            }
+        )
 
 
 class CreateTokenView(ObtainAuthToken):
     """Create a new token for user"""
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer = self.serializer_class(
+            data=request.data, context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
+        user = serializer.validated_data["user"]
         token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user_id': user.pk,
-            'is_staff': user.is_staff,
-        })
+        return Response(
+            {"token": token.key, "user_id": user.pk, "is_staff": user.is_staff}
+        )
 
     serializer_class = AuthTokenSerializer
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
 
 
 class LogoutView(APIView):
-
     def post(self, request, format=None):
         request.auth.delete()
         return Response(status=status.HTTP_200_OK)
@@ -113,14 +114,15 @@ class StudentViewSet(viewsets.ModelViewSet):
     """
     A simple ViewSet for viewing and editing Product.
     """
+
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
 
     @action(
         detail=False,
-        methods=['POST'],
+        methods=["POST"],
         permission_classes=[IsAdmin],
-        url_path='(?P<batch>[^/.]+)'
+        url_path="(?P<batch>[^/.]+)",
     )
     def registration(self, request, batch):
         print("-----------hello---")
@@ -133,9 +135,7 @@ class StudentViewSet(viewsets.ModelViewSet):
 
         content = file.read()
         file_content = ContentFile(content)
-        file_name = fs.save(
-            "_tmp.csv", file_content
-        )
+        file_name = fs.save("_tmp.csv", file_content)
         tmp_file = fs.path(file_name)
 
         csv_file = open(tmp_file, errors="ignore")
@@ -144,30 +144,14 @@ class StudentViewSet(viewsets.ModelViewSet):
 
         student_list = []
         for id_, row in enumerate(reader):
-            (
-                username,
-                email,
-                firstname,
-                lastname,
-
-            ) = row
-            user = User(
-                username=username,
-                email=email,
-            )
-            batch_model = Batch(
-                name=batch
-            )
+            (username, email, firstname, lastname) = row
+            user = User(username=username, email=email)
+            batch_model = Batch(name=batch)
             password = BaseUserManager().make_random_password()
             user.set_password(password)
             user.save()
 
-            student_list.append(
-                Student(
-                    user=user,
-                    batch=batch_model,
-                )
-            )
+            student_list.append(Student(user=user, batch=batch_model))
 
         Student.objects.bulk_create(student_list)
         fs.delete(file_name)

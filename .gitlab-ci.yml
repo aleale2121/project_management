@@ -44,7 +44,7 @@ test:
     DATABASE_URL: postgresql://runner@postgres:5432/test
   script:
     - python app/manage.py test
-    - flake8 --max-line-length=100
+    # - flake8 --max-line-length=100
 
 deploy:
   stage: deploy

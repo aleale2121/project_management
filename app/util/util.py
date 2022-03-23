@@ -9,11 +9,11 @@ from constant import *
 from django.http import JsonResponse
 
 
-def ErrorResponse(code int,path=""):
+def ErrorResponse(code int,model_info,path=""):
     ErrorResponse={
         "status_code" :code,
         "error_code"  : ErrorCode[code],
-        "message"    : ErrorMessage[code],
+        "message"    : model_info+ErrorMessage[code],
         "detail"     :ErrorDetail[code],
         "path"       :path     
     }

@@ -28,6 +28,7 @@ fs = FileSystemStorage(location="tmp/")
 
 
 class BatchModelViewSet(ModelViewSet):
+    
     permission_classes = (IsAdminOrReadOnly,)
     queryset = Batch.objects.all()
     serializer_class = BatchSerializer

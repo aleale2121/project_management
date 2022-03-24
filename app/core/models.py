@@ -11,7 +11,11 @@ from rest_framework.authtoken.models import Token
 
 
 class Batch(models.Model):
-    name = models.CharField(max_length=15, unique=True, primary_key=True, blank=True)
+    name = models.CharField(
+        max_length=15,
+        unique=True,
+        primary_key=True,
+    )
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -24,9 +28,7 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError("Users must have an email address.")
 
-        user = self.model(
-            username=username, email=self.normalize_email(email), **extra_fields
-        )
+        user = self.model(username=username, email=self.normalize_email(email), **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
 
@@ -74,3 +76,11 @@ class Staff(models.Model):
     user = models.OneToOneField(User, related_name="staff", on_delete=models.CASCADE)
     first_name = models.CharField(max_length=15, blank=True)
     last_name = models.CharField(max_length=15, blank=True)
+
+
+class Coordinator(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="coordinators")
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="coordinators")
+    
+    class Meta:
+        unique_together = ["user", "batch"]

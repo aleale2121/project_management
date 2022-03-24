@@ -1,5 +1,5 @@
-from distutils.debug import DEBUG
 import os
+from distutils.debug import DEBUG
 from pathlib import Path
 
 import dj_database_url
@@ -11,15 +11,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY_DEFAULT = (
-    "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*%tu7wd6t90b8"
-)
+SECRET_KEY_DEFAULT = "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*%tu7wd6t90b8"
 SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
+DEBUG = True
 # DEBUG = int(os.environ.get("DEBUG", default=0))
-DEBUG = False
+# DEBUG = False
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm.herokuapp.com"]
 
@@ -74,15 +72,15 @@ WSGI_APPLICATION = "app.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'HOST': os.environ.get('DB_HOST'),
-#         'NAME': os.environ.get('DB_NAME'),
-#         'USER': os.environ.get('DB_USER'),
-#         'PASSWORD': os.environ.get('DB_PASS'),
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': os.environ.get('DB_HOST'),
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASS'),
+    }
+}
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -93,27 +91,23 @@ WSGI_APPLICATION = "app.wsgi.application"
 #         'PORT': os.environ.get('DATABASE_PORT'),
 #     }
 # }
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
-        "TEST": {"NAME": os.environ.get("TEST_DATABASE")},
-    }
-}
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+#         "TEST": {"NAME": os.environ.get("TEST_DATABASE")},
+#     }
+# }
 # Heroku: Update database configuration from $DATABASE_URL.
 
-db_from_env = dj_database_url.config(
-    engine="django.db.backends.postgresql_psycopg2", conn_max_age=600
-)
+db_from_env = dj_database_url.config(engine="django.db.backends.postgresql_psycopg2", conn_max_age=600)
 DATABASES["default"].update(db_from_env)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -142,7 +136,7 @@ MEDIA_URL = "/media/"
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
-CORS_ORIGIN_WHITELIST = ["http://localhost:3000","https://sfpm.herokuapp.com"]
+CORS_ORIGIN_WHITELIST = ["http://localhost:3000", "https://sfpm.herokuapp.com"]
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 

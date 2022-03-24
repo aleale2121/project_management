@@ -1,5 +1,7 @@
 import csv
 
+from core.models import Batch, Coordinator, Staff, Student, User
+from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff, IsStudent
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
@@ -12,11 +14,11 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 
-from core.models import Batch, Student, User
-from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff, IsStudent
 from users.serializers import (
+    AdminRegistrationSerializer,
     AuthTokenSerializer,
     BatchSerializer,
+    CoordinatorSerialzer,
     StaffRegistrationSerializer,
     StaffSerializer,
     StudentRegistrationSerializer,
@@ -34,56 +36,43 @@ class BatchModelViewSet(ModelViewSet):
     pagination_class = None
 
 
-class StaffRegistrationView(generics.GenericAPIView):
-    serializer_class = StaffRegistrationSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        staff = serializer.save()
-        staff_serialize = StaffSerializer(staff)
-        data = staff_serialize.data
-
-        return Response(
-            {
-                "user_info": data,
-                "token": Token.objects.get(user=staff.user).key,
-                "message": "account created successfully",
-            }
-        )
-
-
-class StudentRegistrationView(generics.GenericAPIView):
-    serializer_class = StudentRegistrationSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        student = serializer.save()
-        student_serialize = StudentSerializer(student)
-        data = student_serialize.data
-
-        return Response(
-            {
-                "user_info": data,
-                "token": Token.objects.get(user=student.user).key,
-                "message": "account created successfully",
-            }
-        )
-
-
 class CreateTokenView(ObtainAuthToken):
     """Create a new token for user"""
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(
-            data=request.data, context={"request": request}
-        )
+        serializer = self.serializer_class(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         token, created = Token.objects.get_or_create(user=user)
+        active_batch = None
+        try:
+            active_batch = Batch.objects.get(is_active=True)
+        except Batch.DoesNotExist:
+            pass
+
+        coordinator_history = None
+        is_coordinator = False
+
+        if active_batch != None:
+            print(active_batch)
+            try:
+                coordinator_history = Coordinator.objects.get(user=user, batch=active_batch)
+            except Coordinator.DoesNotExist:
+
+                print("is not coordinator")
+                pass
+        if coordinator_history != None:
+            is_coordinator = True
+
         return Response(
-            {"token": token.key, "user_id": user.pk, "is_staff": user.is_staff}
+            {
+                "token": token.key,
+                "user_id": user.pk,
+                "is_superadmin": user.is_superuser,
+                "is_staff": user.is_staff,
+                "is_coordinator": is_coordinator,
+                "is_student": user.is_student,
+            }
         )
 
     serializer_class = AuthTokenSerializer
@@ -96,23 +85,46 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_200_OK)
 
 
-class StudentsOnlyView(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated & IsStudent]
+class AdminViewSet(ModelViewSet):
+    queryset = User.objects.filter(is_superuser=True)
+
     serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]
 
-    def get_object(self):
-        return self.request.user
+    def create(self, request, *args, **kwargs):
+        serializer = AdminRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        admin = serializer.save()
+        admin_serialize = UserSerializer(admin)
+        data = admin_serialize.data
 
-    def get_queryset(self):
-        return Student.objects.select_related("user", "batch")
+        return Response(
+            {
+                "user_info": data,
+                "message": "admin account created successfully",
+            }
+        )
 
 
-class StaffsOnlyView(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated & IsStaff]
-    serializer_class = UserSerializer
+class StaffViewSet(ModelViewSet):
+    queryset = Staff.objects.all()
 
-    def get_object(self):
-        return self.request.user
+    serializer_class = StaffSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+    def create(self, request, *args, **kwargs):
+        serializer = StaffRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        staff = serializer.save()
+        staff_serialize = StaffSerializer(staff)
+        data = staff_serialize.data
+
+        return Response(
+            {
+                "user_info": data,
+                "message": "account created successfully",
+            }
+        )
 
 
 class StudentViewSet(viewsets.ModelViewSet):
@@ -130,9 +142,7 @@ class StudentViewSet(viewsets.ModelViewSet):
         url_path="(?P<batch>[^/.]+)",
     )
     def registration(self, request, batch):
-        print("-----------hello---")
         """Register Students from CSV"""
-        print(batch)
         batch = get_object_or_404(Batch, pk=batch)
         if not batch.is_active:
             return Response("batch is inactive", status=status.HTTP_400_BAD_REQUEST)
@@ -161,28 +171,37 @@ class StudentViewSet(viewsets.ModelViewSet):
         Student.objects.bulk_create(student_list)
         fs.delete(file_name)
 
-        return Response("Successfully upload the data")
+        return Response("Students registered  successfully")
+
+    def create(self, request, *args, **kwargs):
+        serializer = StudentRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        student = serializer.save()
+        student_serialize = StudentSerializer(student)
+        data = student_serialize.data
+
+        return Response(
+            {
+                "user_info": data,
+                "message": "account created successfully",
+            }
+        )
 
 
-'''
-class CreateUserView(generics.CreateAPIView):
-    """Create a new user in the system"""
-    serializer_class = UserSerializer
+class CoordinatorModelViewSet(ModelViewSet):
+    permission_classes = [IsAdmin]
+    serializer_class = CoordinatorSerialzer
 
+    def get_queryset(self):
+        return Coordinator.objects.all()
 
-class CreateTokenView(ObtainAuthToken):
-    """Create a new token for user"""
-    serializer_class = AuthTokenSerializer
-    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+        except Coordinator.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class ManageUserView(generics.RetrieveUpdateAPIView):
-    """Manage the authenticate user"""
-    serializer_class = UserSerializer
-    authentication_classes = (authentication.TokenAuthentication,)
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get_object(self):
-        """Retreive and return authenticate user"""
-        return self.request.user
-'''
+    def perform_destroy(self, instance):
+        instance.delete()

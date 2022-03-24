@@ -170,7 +170,7 @@ class StudentViewSet(viewsets.ModelViewSet):
             student_list.append(Student(user=user, batch=batch_model))
 
         Student.objects.bulk_create(student_list)
-        fs.delete(file_name)
+        fs.delete(tmp_file)
 
         return Response("Students registered  successfully")
 

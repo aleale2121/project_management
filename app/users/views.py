@@ -6,7 +6,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, permissions, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import APIView, ObtainAuthToken
 from rest_framework.decorators import action
@@ -90,7 +90,7 @@ class AdminViewSet(ModelViewSet):
     queryset = User.objects.filter(is_superuser=True)
 
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
 
     def create(self, request, *args, **kwargs):
         serializer = AdminRegistrationSerializer(data=request.data)
@@ -111,7 +111,7 @@ class StaffViewSet(ModelViewSet):
     queryset = Staff.objects.all()
 
     serializer_class = StaffSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
 
     def create(self, request, *args, **kwargs):
         serializer = StaffRegistrationSerializer(data=request.data)

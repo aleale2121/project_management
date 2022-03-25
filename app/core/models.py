@@ -81,6 +81,21 @@ class Staff(models.Model):
 class Coordinator(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="coordinators")
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="coordinators")
-    
+
     class Meta:
         unique_together = ["user", "batch"]
+
+
+class Group(models.Model):
+    group_name = models.CharField(max_length=25)
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="groups")
+
+    class Meta:
+        unique_together = ["group_name", "batch"]
+
+
+class Member(models.Model):
+    group = models.ForeignKey(Group, related_name="members", on_delete=models.CASCADE)
+    member = models.ForeignKey(Student, related_name="members", on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ["group", "member"]

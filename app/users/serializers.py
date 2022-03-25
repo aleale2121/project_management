@@ -2,6 +2,7 @@ from core.models import Batch, Coordinator, Staff, Student, User
 from django.contrib.auth import authenticate, get_user_model
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from rest_framework.fields import SerializerMethodField
 
 
 class AuthTokenSerializer(serializers.Serializer):
@@ -54,6 +55,30 @@ class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         fields = ("user", "batch")
+
+
+class StudentSerializerTwo(serializers.ModelSerializer):
+    """Serializer for the user object"""
+
+    # user = UserSerializer()
+    username = SerializerMethodField()
+    email = SerializerMethodField()
+    batch = SerializerMethodField()
+
+    class Meta:
+        model = Student
+        fields = "__all__"
+
+    def get_username(self, obj):
+        return UserSerializer(obj.user).data["username"]
+
+    def get_email(self, obj):
+        return UserSerializer(obj.user).data["email"]
+    
+    def get_batch(self, obj):
+        return BatchSerializer(obj.batch).data["name"]
+    
+
 
 
 class StaffSerializer(serializers.ModelSerializer):

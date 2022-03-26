@@ -92,6 +92,8 @@ class AdminViewSet(ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdmin]
 
+ 
+
     def create(self, request, *args, **kwargs):
         serializer = AdminRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -105,7 +107,6 @@ class AdminViewSet(ModelViewSet):
                 "message": "admin account created successfully",
             }
         )
-
 
 class StaffViewSet(ModelViewSet):
     queryset = Staff.objects.all()

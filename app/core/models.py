@@ -99,3 +99,15 @@ class Member(models.Model):
     member = models.ForeignKey(Student, related_name="members", on_delete=models.CASCADE)
     class Meta:
         unique_together = ["group", "member"]
+
+class Advisor(models.Model):
+    group = models.ForeignKey(Group,related_name="advisors", on_delete=models.CASCADE)
+    advisor = models.ForeignKey(User, related_name="advisors", on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ["group", "advisor"]
+
+class Examiner(models.Model):
+    group = models.ForeignKey(Group, related_name="examiners", on_delete=models.CASCADE)
+    examiner = models.ForeignKey(User, related_name="examiners", on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ["group", "examiner"]

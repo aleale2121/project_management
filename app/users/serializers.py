@@ -58,9 +58,8 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 class StudentSerializerTwo(serializers.ModelSerializer):
-    """Serializer for the user object"""
+    """Serializer for the student object"""
 
-    # user = UserSerializer()
     username = SerializerMethodField()
     email = SerializerMethodField()
     batch = SerializerMethodField()
@@ -90,6 +89,40 @@ class StaffSerializer(serializers.ModelSerializer):
         model = Student
         fields = ("user",)
 
+
+class StaffSerializerTwo(serializers.ModelSerializer):
+    """Serializer for the staff object"""
+
+    username = SerializerMethodField()
+    email = SerializerMethodField()
+
+    class Meta:
+        model = Staff
+        fields = "__all__"
+
+    def get_username(self, obj):
+        return UserSerializer(obj.user).data["username"]
+
+    def get_email(self, obj):
+        return UserSerializer(obj.user).data["email"]
+    
+    
+class StaffSerializerThree(serializers.ModelSerializer):
+    """Serializer for the staff object"""
+
+    username = SerializerMethodField()
+    email = SerializerMethodField()
+
+    class Meta:
+        model = Staff
+        fields = "__all__"
+
+    def get_username(self, obj):
+        return UserSerializer(obj.user).data["username"]
+
+    def get_email(self, obj):
+        return UserSerializer(obj.user).data["email"]
+ 
 
 class AdminRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for the admin object"""

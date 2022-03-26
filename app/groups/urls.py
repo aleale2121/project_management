@@ -8,6 +8,7 @@ app_name = "groups"
 router = routers.SimpleRouter()
 
 router.register(r"groups", views.GroupsModelViewSet, basename="groups")
-urlpatterns = [
-  
-] + router.urls
+router.register(r"advisors", views.AdvisorModelViewSet, basename="groups-advisor")
+router.register(r"examiners", views.ExaminerModelViewSet, basename="groups-examiner")
+
+urlpatterns = [] + router.urls

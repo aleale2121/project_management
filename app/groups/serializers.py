@@ -1,20 +1,44 @@
-from tokenize import group
-
-from core.models import Batch, Group, Member, Student, User
+from dataclasses import fields
+from core.models import Advisor, Batch, Examiner, Group, Member, Staff, Student, User
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from users.serializers import StudentSerializer, StudentSerializerTwo
+from rest_framework.serializers import SerializerMethodField
+from users.serializers import (
+    StaffSerializerThree,
+    StaffSerializerTwo,
+    StudentSerializer,
+    StudentSerializerTwo,
+    UserSerializer,
+)
 
 
 class MemberSerializer(serializers.ModelSerializer):
-    """Serializer for the batch object"""
+    """Serializer for the member object"""
 
     member = StudentSerializerTwo()
 
     class Meta:
         model = Member
-        # fields = ["member"]
-        # read_only_fields = ["is_active"]
+        fields = "__all__"
+
+
+class AdvisorSerializer(serializers.ModelSerializer):
+    """Serializer for the member object"""
+
+    advisor = UserSerializer()
+
+    class Meta:
+        model = Advisor
+        fields = "__all__"
+
+
+class ExaminerSerializer(serializers.ModelSerializer):
+    """Serializer for the member object"""
+
+    examiner = UserSerializer()
+
+    class Meta:
+        model = Examiner
         fields = "__all__"
 
 
@@ -23,14 +47,18 @@ class GroupSerializer(serializers.ModelSerializer):
         max_length=25,
     )
     group_members = serializers.ListField(child=serializers.CharField(), write_only=True)
-    # members = serializers.PrimaryKeyRelatedField(many=True, queryset=Member.objects.all(), default=None)
     members = MemberSerializer(many=True, read_only=True)
-    batch = serializers.SlugRelatedField(slug_field="name", queryset=Batch.objects.all())
+    batch = serializers.SlugRelatedField(
+        slug_field="name",
+        read_only=True,
+    )
+    advisors = AdvisorSerializer(many=True, read_only=True)
+    examiners = ExaminerSerializer(many=True, read_only=True)
 
     class Meta:
         model = Group
-        fields = ("group_name", "batch", "members", "group_members")
-        read_only_fields = ("batch", "members")
+        fields = ("id", "group_name", "batch", "members", "advisors", "examiners", "group_members")
+        read_only_fields = ("id", "batch", "members")
         extra_kwargs = {
             "group_members": {"write_only": True},
         }
@@ -44,13 +72,11 @@ class GroupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"error": "currently there is no active batch"})
 
         current_batch_groups = Group.objects.filter(batch=active_batch)
-        print(current_batch_groups)
-        print(active_batch)
         for current_batch_group in current_batch_groups:
             group_members_list = Member.objects.filter(group=current_batch_group)
             for group_member in group_members_list:
                 for g_member in g_members:
-                    if MemberSerializer(group_member).data['member']['username'] == g_member:
+                    if MemberSerializer(group_member).data["member"]["username"] == g_member:
                         response = "student with username " + g_member + " cannot join 2 groups"
                         raise serializers.ValidationError(
                             {
@@ -90,3 +116,83 @@ class GroupSerializer(serializers.ModelSerializer):
         for student in student_list:
             Member.objects.create(group=group, member=student)
         return group
+
+
+class ReadGroupSerializer(serializers.HyperlinkedModelSerializer):
+
+    members = MemberSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Group
+        fields = (
+            "id",
+            "group_name",
+            "batch",
+            "members",
+        )
+        read_only_fields = fields
+
+
+class WriteAdvisorSerialzer(serializers.ModelSerializer):
+    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
+    advisor = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.filter(is_staff=True))
+
+    class Meta:
+        model = Advisor
+
+        fields = ("group", "advisor")
+
+    def validate(self, data):
+        username = data.get("advisor")
+        try:
+            user = User.objects.get(username=username)
+            if user.is_staff == False:
+                raise serializers.ValidationError("only staff members can be advisor")
+        except User.DoesNotExist:
+            response_message = "user with id " + username + " not found"
+            raise serializers.ValidationError(response_message)
+        return super().validate(data)
+
+
+class ReadAdvisorSerializer(serializers.HyperlinkedModelSerializer):
+    groups = ReadGroupSerializer(
+        many=True,
+        read_only=True,
+    )
+    advisor = UserSerializer()
+
+    class Meta:
+        model = Advisor
+        fields = ("advisor", "groups")
+        read_only_fields = fields
+
+
+class WriteExaminerSerialzer(serializers.ModelSerializer):
+    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
+    examiner = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.filter(is_staff=True))
+
+    class Meta:
+        model = Examiner
+
+        fields = ("group", "examiner")
+
+    def validate(self, data):
+        username = data.get("examiner")
+        try:
+            user = User.objects.get(username=username)
+            if user.is_staff == False:
+                raise serializers.ValidationError("only staff members can be examiner")
+        except User.DoesNotExist:
+            response_message = "user with id " + username + " not found"
+            raise serializers.ValidationError(response_message)
+        return super().validate(data)
+
+
+class ReadExaminerSerializer(serializers.ModelSerializer):
+    group = GroupSerializer()
+    examiner = UserSerializer()
+
+    class Meta:
+        model = Examiner
+        fields = ("group", "examiner")
+        read_only_fields = fields

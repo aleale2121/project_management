@@ -79,17 +79,6 @@ class Coordinator(models.Model):
         unique_together = ["user", "batch"]
 
 
-# Group models
-class Group(models.Model):
-    class Meta:
-        db_table = "groups"
-
-    group_name = models.CharField(max_length=30)
-    batch = models.ForeignKey(Batch, related_name='groups',on_delete=models.CASCADE)
-    created_at = models.DateTimeField(default=now, editable=True)
-    updated_at = models.DateTimeField(default=now, editable=True)
-
-
 # SubmissionType models
 class SubmissionType(models.Model):
     class Meta:
@@ -151,3 +140,28 @@ class TopProject(models.Model):
     created_at = models.DateTimeField(default=now, editable=True)
     updated_at = models.DateTimeField(default=now, editable=True)
 
+class Group(models.Model):
+    group_name = models.CharField(max_length=25)
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="groups")
+
+    class Meta:
+        unique_together = ["group_name", "batch"]
+
+
+class Member(models.Model):
+    group = models.ForeignKey(Group, related_name="members", on_delete=models.CASCADE)
+    member = models.ForeignKey(Student, related_name="members", on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ["group", "member"]
+
+class Advisor(models.Model):
+    group = models.ForeignKey(Group,related_name="advisors", on_delete=models.CASCADE)
+    advisor = models.ForeignKey(User, related_name="advisors", on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ["group", "advisor"]
+
+class Examiner(models.Model):
+    group = models.ForeignKey(Group, related_name="examiners", on_delete=models.CASCADE)
+    examiner = models.ForeignKey(User, related_name="examiners", on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ["group", "examiner"]

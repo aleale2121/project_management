@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "submissions",
     "submission_dead_lines",
     "pkg",
+    "groups",
 ]
 
 MIDDLEWARE = [

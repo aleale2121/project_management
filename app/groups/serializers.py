@@ -1,5 +1,18 @@
-from dataclasses import fields
-from core.models import Advisor, Batch, Examiner, Group, Member, Staff, Student, User
+import os
+import uuid
+
+from core.models import (
+    Advisor,
+    Batch,
+    Examiner,
+    Group,
+    Member,
+    ProjectTitle,
+    Staff,
+    Student,
+    User,
+)
+from django.db import IntegrityError
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.serializers import SerializerMethodField
@@ -15,11 +28,34 @@ from users.serializers import (
 class MemberSerializer(serializers.ModelSerializer):
     """Serializer for the member object"""
 
-    member = StudentSerializerTwo()
-
     class Meta:
         model = Member
         fields = "__all__"
+
+
+class ReadMembersSerializer(serializers.ModelSerializer):
+
+    username = SerializerMethodField()
+    email = SerializerMethodField()
+    batch = SerializerMethodField()
+
+    class Meta:
+        model = Member
+        fields = ("id", "username", "email", "batch")
+
+    def validate(self, data):
+        return super().validate(data)
+
+    def get_username(self, obj):
+
+        return obj.member.username
+
+    def get_email(self, obj):
+        return obj.member.email
+
+    def get_batch(self, obj):
+        student = Student.objects.get(user=obj.member)
+        return student.batch.name
 
 
 class AdvisorSerializer(serializers.ModelSerializer):
@@ -64,7 +100,9 @@ class GroupSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
+        current_user = self.context["request"].user
         g_members = data.get("group_members")
+        g_members.append(current_user.username)
         active_batch = None
         try:
             active_batch = Batch.objects.get(is_active=True)
@@ -77,7 +115,16 @@ class GroupSerializer(serializers.ModelSerializer):
             for group_member in group_members_list:
                 for g_member in g_members:
                     if MemberSerializer(group_member).data["member"]["username"] == g_member:
-                        response = "student with username " + g_member + " cannot join 2 groups"
+                        response = ""
+                        if g_member == current_user.username:
+                            response = "You have already joined " + current_batch_group.group_name
+                        else:
+                            response = (
+                                "student with username "
+                                + g_member
+                                + " already joined "
+                                + current_batch_group.group_name
+                            )
                         raise serializers.ValidationError(
                             {
                                 "error": response,
@@ -87,6 +134,8 @@ class GroupSerializer(serializers.ModelSerializer):
         return super().validate(data)
 
     def create(self, validated_data):
+        current_user = self.context["request"].user
+
         members_data = validated_data.pop("group_members")
         active_batch = None
         try:
@@ -111,16 +160,25 @@ class GroupSerializer(serializers.ModelSerializer):
                 response = "student with username " + member_data + " not found"
                 raise serializers.ValidationError({"error": response})
 
-        group = Group.objects.create(group_name=self.validated_data["group_name"], batch=active_batch)
+        group = None
+        try:
+            group = Group.objects.create(group_name=self.validated_data["group_name"], batch=active_batch)
+        except IntegrityError:
+            raise serializers.ValidationError({"error": "group name already exists"})
 
+        member_objects = []
         for student in student_list:
-            Member.objects.create(group=group, member=student)
+            member_objects.append(Member(group=group, member=student))
+
+        Member.objects.bulk_create(member_objects)
         return group
 
 
-class ReadGroupSerializer(serializers.HyperlinkedModelSerializer):
+class ReadGroupSerializer(serializers.ModelSerializer):
 
-    members = MemberSerializer(many=True, read_only=True)
+    members = ReadMembersSerializer(many=True, read_only=True)
+    advisors = AdvisorSerializer(many=True, read_only=True)
+    examiners = ExaminerSerializer(many=True, read_only=True)
 
     class Meta:
         model = Group
@@ -129,6 +187,8 @@ class ReadGroupSerializer(serializers.HyperlinkedModelSerializer):
             "group_name",
             "batch",
             "members",
+            "advisors",
+            "examiners",
         )
         read_only_fields = fields
 
@@ -159,12 +219,19 @@ class ReadAdvisorSerializer(serializers.HyperlinkedModelSerializer):
         many=True,
         read_only=True,
     )
-    advisor = UserSerializer()
+    username = SerializerMethodField()
+    email = SerializerMethodField()
 
     class Meta:
         model = Advisor
-        fields = ("advisor", "groups")
+        fields = ("id", "username", "email", "groups")
         read_only_fields = fields
+
+    def get_username(self, obj):
+        return obj.advisor.username
+
+    def get_email(self, obj):
+        return obj.advisor.email
 
 
 class WriteExaminerSerialzer(serializers.ModelSerializer):
@@ -190,9 +257,52 @@ class WriteExaminerSerialzer(serializers.ModelSerializer):
 
 class ReadExaminerSerializer(serializers.ModelSerializer):
     group = GroupSerializer()
-    examiner = UserSerializer()
+
+    username = SerializerMethodField()
+    email = SerializerMethodField()
 
     class Meta:
         model = Examiner
-        fields = ("group", "examiner")
+        fields = ("id", "username", "email", "group")
         read_only_fields = fields
+
+    def get_username(self, obj):
+        return obj.examiner.username
+
+    def get_email(self, obj):
+        return obj.examiner.email
+
+
+class ProjectTitleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectTitle
+        fields = ["group", "title", "doc_path", "description", "is_approved"]
+        read_only_fields = ("group", "doc_path")
+        depth = 1
+
+    def create(self, request, *args, **kwargs):
+        user = self.context["request"].user
+        member_student = None
+        try:
+            member_student = Member.objects.get(member=user.username)
+        except Member.DoesNotExist:
+            response_message = "you haven't joined or created any group"
+            raise serializers.ValidationError(response_message)
+        project_title_data = request.data
+
+        name = f"{uuid.uuid4()}.txt"
+        filename = os.path.join("uploads/titles/", name)
+        text_file = open(filename, "w")
+        text_file.write(
+            project_title_data["description"],
+        )
+
+        new_title = ProjectTitle.objects.create(
+            group=member_student.group,
+            title=project_title_data["title"],
+            description=project_title_data["description"],
+            doc_path=filename,
+        )
+        new_title = new_title.save()
+
+        return new_title

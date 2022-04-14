@@ -28,3 +28,8 @@ class UserAdmin(BaseUserAdmin):
 admin.site.register(models.User, UserAdmin)
 admin.site.register(models.Staff)
 admin.site.register(models.Student)
+admin.site.register(models.Batch)
+admin.site.register(models.Group)
+admin.site.register(models.Member)
+admin.site.register(models.Examiner)
+

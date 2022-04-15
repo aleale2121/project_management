@@ -30,18 +30,19 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # 'whitenoise.runserver_nostatic'
     "rest_framework",
     "corsheaders",
     "rest_framework.authtoken",
+    "django_filters",
     "core",
     "users",
-    "evaluations",
-    'titles',
-    "submission_types",
-    "submissions",
-    "submission_dead_lines",
-    "pkg",
     "groups",
+    "evaluations",
+    "titles",
+    "submission_types",
+    "submission_dead_lines",
+    "top_projects",
 ]
 
 MIDDLEWARE = [
@@ -134,12 +135,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
+# STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+# STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
+# STATICFILES_DIRS = ('/vol/web/static',)
 
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+# MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+# MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
+STATIC_ROOT = "/vol/web/static"
+MEDIA_ROOT = "/vol/web/media"
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
@@ -159,8 +166,17 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "PAGE_SIZE": 100,
 }
 
 AUTH_USER_MODEL = "core.User"
 ACCOUNT_UNIQUE_EMAIL = True
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST_USER = "alefewyimer2@gmail.com"
+EMAIL_HOST_PASSWORD = "bfbgnezhdpspowzx"  # past the key or password app here
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = "alefewyimer2@gmail.com"

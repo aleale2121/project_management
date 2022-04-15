@@ -1,22 +1,14 @@
 from django.conf import settings
-from django.utils.timezone import now
-from django.contrib.auth.models import (
-    AbstractBaseUser,
-    BaseUserManager,
-    PermissionsMixin,
-)
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils.timezone import now
 from rest_framework.authtoken.models import Token
 
 
 class Batch(models.Model):
-    name = models.CharField(
-        max_length=15,
-        unique=True,
-        primary_key=True,
-    )
+    name = models.CharField(max_length=15, unique=True, primary_key=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -120,12 +112,11 @@ class Examiner(models.Model):
 
 
 class ProjectTitle(models.Model):
-    group = models.OneToOneField(Group, related_name="projecttitles", on_delete=models.CASCADE,primary_key=True)
+    group = models.OneToOneField(Group, related_name="projecttitles", on_delete=models.CASCADE, primary_key=True)
     title = models.CharField(max_length=25)
     doc_path = models.CharField(max_length=500, blank=True)
     description = models.CharField(max_length=1000, blank=True)
     is_approved = models.BooleanField(default=False)
-
 
 
 # SubmissionType models
@@ -137,6 +128,7 @@ class SubmissionType(models.Model):
     name = models.CharField(max_length=200, unique=True, primary_key=True)
     created_at = models.DateTimeField(default=now, editable=True)
     updated_at = models.DateTimeField(default=now, editable=True)
+
 
 # SubmissionDeadLine model
 class SubmissionDeadLine(models.Model):
@@ -163,6 +155,7 @@ class StudentEvaluation(models.Model):
     mark = models.FloatField(null=True)
     created_at = models.DateTimeField(default=now, editable=True)
     updated_at = models.DateTimeField(default=now, editable=True)
+
 
 # Title model
 class Title(models.Model):

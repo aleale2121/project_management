@@ -96,18 +96,32 @@ class Group(models.Model):
 
 class Member(models.Model):
     group = models.ForeignKey(Group, related_name="members", on_delete=models.CASCADE)
-    member = models.ForeignKey(Student, related_name="members", on_delete=models.CASCADE)
+    member = models.ForeignKey(User, related_name="members", on_delete=models.CASCADE)
+
     class Meta:
         unique_together = ["group", "member"]
 
+
 class Advisor(models.Model):
-    group = models.ForeignKey(Group,related_name="advisors", on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, related_name="advisors", on_delete=models.CASCADE)
     advisor = models.ForeignKey(User, related_name="advisors", on_delete=models.CASCADE)
+
     class Meta:
         unique_together = ["group", "advisor"]
+
 
 class Examiner(models.Model):
     group = models.ForeignKey(Group, related_name="examiners", on_delete=models.CASCADE)
     examiner = models.ForeignKey(User, related_name="examiners", on_delete=models.CASCADE)
+
     class Meta:
         unique_together = ["group", "examiner"]
+
+
+class ProjectTitle(models.Model):
+    group = models.OneToOneField(Group, related_name="projecttitles", on_delete=models.CASCADE,primary_key=True)
+    title = models.CharField(max_length=25)
+    doc_path = models.CharField(max_length=500, blank=True)
+    description = models.CharField(max_length=1000, blank=True)
+    is_approved = models.BooleanField(default=False)
+

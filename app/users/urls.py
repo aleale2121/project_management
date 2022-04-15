@@ -1,11 +1,11 @@
-from django.urls import path
-from rest_framework import routers
+from django.urls import include, path
+from rest_framework_nested import routers
 
 from users import views
 
 app_name = "users"
 
-router = routers.SimpleRouter()
+router = routers.SimpleRouter(trailing_slash=False)
 
 router.register(r"admins", views.AdminViewSet, basename="admins")
 router.register(r"staffs", views.StaffViewSet, basename="staffs")
@@ -15,4 +15,5 @@ router.register(r"coordinators", views.CoordinatorModelViewSet, basename="coordi
 urlpatterns = [
     path("login/", views.CreateTokenView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
+    path(r"", include(router.urls)),
 ] + router.urls

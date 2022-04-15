@@ -5,6 +5,7 @@ from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff, IsStudent
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
+from django.core.mail import EmailMessage, send_mail, send_mass_mail
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
@@ -21,8 +22,10 @@ from users.serializers import (
     CoordinatorSerialzer,
     StaffRegistrationSerializer,
     StaffSerializer,
+    StaffSerializerTwo,
     StudentRegistrationSerializer,
     StudentSerializer,
+    StudentSerializerTwo,
     UserSerializer,
 )
 
@@ -30,7 +33,7 @@ fs = FileSystemStorage(location="tmp/")
 
 
 class BatchModelViewSet(ModelViewSet):
-    
+
     permission_classes = (IsAdminOrReadOnly,)
     queryset = Batch.objects.all()
     serializer_class = BatchSerializer
@@ -92,8 +95,6 @@ class AdminViewSet(ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdmin]
 
- 
-
     def create(self, request, *args, **kwargs):
         serializer = AdminRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -108,11 +109,17 @@ class AdminViewSet(ModelViewSet):
             }
         )
 
+
 class StaffViewSet(ModelViewSet):
     queryset = Staff.objects.all()
 
-    serializer_class = StaffSerializer
+    # serializer_class = StaffSerializer
     permission_classes = [IsAdmin]
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return StaffSerializerTwo
+        return StaffSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = StaffRegistrationSerializer(data=request.data)
@@ -135,7 +142,7 @@ class StudentViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Student.objects.all()
-    serializer_class = StudentSerializer
+    serializer_class = StudentSerializerTwo
 
     @action(
         detail=False,
@@ -160,19 +167,40 @@ class StudentViewSet(viewsets.ModelViewSet):
         next(reader)
 
         student_list = []
+        ctx_list = []
         for id_, row in enumerate(reader):
             (username, email, firstname, lastname) = row
             user = User(username=username, email=email)
             batch_model = Batch(name=batch)
             password = BaseUserManager().make_random_password()
+            print(password)
+            user.is_student = True
             user.set_password(password)
             user.save()
 
             student_list.append(Student(user=user, batch=batch_model))
+            msg = "your SiTE Project Repository password is " + password
+            ctx_list.append(
+                {
+                    "username": username,
+                    "first_name": firstname,
+                    "last_name": lastname,
+                    "email": email,
+                    "subject": "SiTE Repository Password announcement",
+                    "msg": msg,
+                }
+            )
 
-        Student.objects.bulk_create(student_list)
+        from_email = "alefewyimer2@gmail.com"
+        email_tuple = tuple()
+
+        for i in ctx_list:
+            email_tuple = email_tuple + ((i["subject"], i["msg"], from_email, [i["email"]]),)
+
         fs.delete(tmp_file)
-
+        email_res = send_mass_mail((email_tuple), fail_silently=False)
+        print(email_res)
+        Student.objects.bulk_create(student_list)
         return Response("Students registered  successfully")
 
     def create(self, request, *args, **kwargs):

@@ -67,6 +67,7 @@ class AdvisorSerializer(serializers.ModelSerializer):
         model = Advisor
         fields = "__all__"
 
+
 class AdvisorSerializerTwo(serializers.ModelSerializer):
 
     username = SerializerMethodField()
@@ -188,7 +189,7 @@ class GroupSerializer(serializers.ModelSerializer):
                 user = User.objects.get(username=member_data)
                 try:
                     student = Student.objects.get(user=user, batch=active_batch)
-                    student_list.append(student)
+                    student_list.append(user)
                 except Student.DoesNotExist:
                     response = (
                         "student with username " + member_data + " is not registered for the current acadamic year"
@@ -207,6 +208,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
         member_objects = []
         for student in student_list:
+            print(student)
             member_objects.append(Member(group=group, member=student))
 
         Member.objects.bulk_create(member_objects)

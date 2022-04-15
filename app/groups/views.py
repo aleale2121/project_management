@@ -56,9 +56,9 @@ class GroupsModelViewSet(ModelViewSet):
         return super(self.__class__, self).update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        response = self.check_membership(request, kwargs["pk"])
-        if response != None:
-            return response
+        # response = self.check_membership(request, kwargs["pk"])
+        # if response != None:
+        #     return response
         try:
             instance = self.get_object()
             self.perform_destroy(
@@ -85,7 +85,7 @@ class GroupsModelViewSet(ModelViewSet):
             return Response({"error": "group doesnot exist"})
 
         try:
-            member = Member.objects.get(group=group, member=student)
+            member = Member.objects.get(group=group, member=request.user)
             # return Response({"hello": "helopp"})
         except Member.DoesNotExist:
             return Response({"error": "your are not authorized to edit the group"})

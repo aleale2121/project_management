@@ -12,6 +12,7 @@ from core.permissions import (
     HasGroup,
     IsAdmin,
     IsAdminOrReadOnly,
+    IsCoordinatorOrReadOnly,
     IsReadOnly,
     IsStaff,
     IsStudent,
@@ -164,7 +165,7 @@ class MemberModelViewSet(ModelViewSet):
 
 class AdvisorModelViewSet(ModelViewSet):
 
-    permission_classes = [IsAdmin]
+    permission_classes = [IsCoordinatorOrReadOnly]
     queryset = Advisor.objects.all()
 
     def get_serializer_class(self):
@@ -186,7 +187,7 @@ class AdvisorModelViewSet(ModelViewSet):
 
 class ExaminerModelViewSet(ModelViewSet):
 
-    permission_classes = [IsAdmin]
+    permission_classes = [IsCoordinatorOrReadOnly]
 
     def get_queryset(self):
         return Examiner.objects.all()

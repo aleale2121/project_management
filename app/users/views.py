@@ -58,12 +58,9 @@ class CreateTokenView(ObtainAuthToken):
         is_coordinator = False
 
         if active_batch != None:
-            print(active_batch)
             try:
                 coordinator_history = Coordinator.objects.get(user=user, batch=active_batch)
             except Coordinator.DoesNotExist:
-
-                print("is not coordinator")
                 pass
         if coordinator_history != None:
             is_coordinator = True
@@ -113,7 +110,6 @@ class AdminViewSet(ModelViewSet):
 class StaffViewSet(ModelViewSet):
     queryset = Staff.objects.all()
 
-    # serializer_class = StaffSerializer
     permission_classes = [IsAdmin]
 
     def get_serializer_class(self):

@@ -67,6 +67,45 @@ class AdvisorSerializer(serializers.ModelSerializer):
         model = Advisor
         fields = "__all__"
 
+class AdvisorSerializerTwo(serializers.ModelSerializer):
+
+    username = SerializerMethodField()
+    email = SerializerMethodField()
+
+    class Meta:
+        model = Member
+        fields = ("id", "username", "email")
+
+    def validate(self, data):
+        return super().validate(data)
+
+    def get_username(self, obj):
+
+        return obj.advisor.username
+
+    def get_email(self, obj):
+        return obj.advisor.email
+
+
+class ExaminerSerializerTwo(serializers.ModelSerializer):
+
+    username = SerializerMethodField()
+    email = SerializerMethodField()
+
+    class Meta:
+        model = Member
+        fields = ("id", "username", "email")
+
+    def validate(self, data):
+        return super().validate(data)
+
+    def get_username(self, obj):
+
+        return obj.examiner.username
+
+    def get_email(self, obj):
+        return obj.examiner.email
+
 
 class ExaminerSerializer(serializers.ModelSerializer):
     """Serializer for the member object"""
@@ -177,8 +216,8 @@ class GroupSerializer(serializers.ModelSerializer):
 class ReadGroupSerializer(serializers.ModelSerializer):
 
     members = ReadMembersSerializer(many=True, read_only=True)
-    advisors = AdvisorSerializer(many=True, read_only=True)
-    examiners = ExaminerSerializer(many=True, read_only=True)
+    advisors = AdvisorSerializerTwo(many=True, read_only=True)
+    examiners = ExaminerSerializerTwo(many=True, read_only=True)
 
     class Meta:
         model = Group

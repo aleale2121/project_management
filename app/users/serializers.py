@@ -43,7 +43,20 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ("username", "email", "is_staff", "is_superuser")
+        fields = ("username", "email", "password", "is_staff", "is_superuser")
+        read_only_fields = ["username", "is_staff"]
+        extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
+
+    def update(self, instance, validated_data):
+        """Update a user, setting the password correctly and return it"""
+        password = self.validated_data.pop("password", None)
+        user = super().update(instance, validated_data)
+        print(password)
+        if password:
+            print(password)
+            user.set_password(password)
+            user.save()
+        return user
 
 
 class StudentSerializer(serializers.ModelSerializer):

@@ -169,12 +169,18 @@ class StudentViewSet(viewsets.ModelViewSet):
             user = User(username=username, email=email)
             batch_model = Batch(name=batch)
             password = BaseUserManager().make_random_password()
-            print(password)
             user.is_student = True
             user.set_password(password)
             user.save()
 
-            student_list.append(Student(user=user, batch=batch_model))
+            student_list.append(
+                Student(
+                    user=user,
+                    batch=batch_model,
+                    first_name=firstname,
+                    last_name=lastname,
+                )
+            )
             msg = "your SiTE Project Repository password is " + password
             ctx_list.append(
                 {
@@ -195,7 +201,6 @@ class StudentViewSet(viewsets.ModelViewSet):
 
         fs.delete(tmp_file)
         email_res = send_mass_mail((email_tuple), fail_silently=False)
-        print(email_res)
         Student.objects.bulk_create(student_list)
         return Response("Students registered  successfully")
 

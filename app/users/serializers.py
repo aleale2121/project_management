@@ -190,7 +190,12 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         user.is_superuser = False
         user.is_student = True
         user.save()
-        student = Student.objects.create(user=user, batch=self.validated_data["batch"])
+        student = Student.objects.create(
+            user=user,
+            batch=self.validated_data["batch"],
+            first_name=self.validated_data["first_name"],
+            last_name=self.validated_data["last_name"],
+        )
         return student
 
 

@@ -1,13 +1,13 @@
 import csv
 
 from core.models import Batch, Coordinator, Staff, Student, User
-from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff, IsStudent
+from core.permissions import IsAdmin, IsAdminOrReadOnly
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.core.mail import EmailMessage, send_mail, send_mass_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
+from rest_framework import authentication, generics, permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import APIView, ObtainAuthToken
 from rest_framework.decorators import action
@@ -78,6 +78,17 @@ class CreateTokenView(ObtainAuthToken):
 
     serializer_class = AuthTokenSerializer
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
+
+class ManageUserView(generics.RetrieveUpdateAPIView):
+    """Manage the authenticated user"""
+
+    serializer_class = UserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_object(self):
+        """Retrieve and return authentication user"""
+        return self.request.user
 
 
 class LogoutView(APIView):

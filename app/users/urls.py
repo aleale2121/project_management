@@ -15,5 +15,7 @@ router.register(r"coordinators", views.CoordinatorModelViewSet, basename="coordi
 urlpatterns = [
     path("login/", views.CreateTokenView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
+    path('me/', views.ManageUserView.as_view(), name='me'),
+
     path(r"", include(router.urls)),
 ] + router.urls

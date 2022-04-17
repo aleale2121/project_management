@@ -83,7 +83,7 @@ class Coordinator(models.Model):
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="coordinators")
 
     class Meta:
-        unique_together = ["user", "batch"]
+        unique_together = ["batch"]
 
 
 class Group(models.Model):

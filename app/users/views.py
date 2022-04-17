@@ -144,9 +144,10 @@ class StaffViewSet(ModelViewSet):
 
 
 class StudentViewSet(viewsets.ModelViewSet):
-    """
-    A simple ViewSet for viewing and editing Product.
-    """
+
+    filterset_fields = [
+        "batch",
+    ]
 
     queryset = Student.objects.all()
     serializer_class = StudentSerializerTwo

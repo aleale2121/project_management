@@ -38,6 +38,11 @@ INSTALLED_APPS = [
     "core",
     "users",
     "groups",
+    "evaluations",
+    "titles",
+    "submission_types",
+    "submission_dead_lines",
+    "top_projects",
 ]
 
 MIDDLEWARE = [

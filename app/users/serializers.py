@@ -219,6 +219,7 @@ class CoordinatorSerialzer(serializers.ModelSerializer):
     class Meta:
         model = Coordinator
         fields = (
+            "id",
             "batch",
             "user",
         )

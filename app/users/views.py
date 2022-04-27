@@ -1,12 +1,15 @@
 import csv
+from xmlrpc.client import Boolean
 
-from core.models import Batch, Coordinator, Staff, Student, User
+from django.utils.datastructures import MultiValueDictKeyError
+from core.models import Advisor, Batch, Coordinator, Group, Member, Staff, Student, User
 from core.permissions import IsAdmin, IsAdminOrReadOnly
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.core.mail import EmailMessage, send_mail, send_mass_mail
 from django.shortcuts import get_object_or_404
+from groups.serializers import ReadGroupSerializer
 from rest_framework import authentication, generics, permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import APIView, ObtainAuthToken
@@ -65,6 +68,28 @@ class CreateTokenView(ObtainAuthToken):
         if coordinator_history != None:
             is_coordinator = True
 
+        joinedGroup = None
+        try:
+            member = Member.objects.get(member=user)
+            group = ReadGroupSerializer(member.group)
+            if group != None:
+                joinedGroup = group.data
+        except Member.DoesNotExist:
+            pass
+        advisor_to = []
+        examiner_to = []
+        if active_batch != None:
+            try:
+                advisor_to = ReadGroupSerializer(
+                    Group.objects.filter(batch=active_batch).filter(advisors__advisor__exact=user), many=True
+                )
+                examiner_to = ReadGroupSerializer(
+                    Group.objects.filter(batch=active_batch).filter(examiners__examiner__exact=user), many=True
+                )
+
+            except Batch.DoesNotExist:
+                pass
+
         return Response(
             {
                 "token": token.key,
@@ -73,6 +98,9 @@ class CreateTokenView(ObtainAuthToken):
                 "is_staff": user.is_staff,
                 "is_coordinator": is_coordinator,
                 "is_student": user.is_student,
+                "group": joinedGroup,
+                "advisor_to": advisor_to.data,
+                "examiner_to": examiner_to.data,
             }
         )
 
@@ -193,14 +221,14 @@ class StudentViewSet(viewsets.ModelViewSet):
                     last_name=lastname,
                 )
             )
-            msg = "your SiTE Project Repository password is " + password
+            msg = "Your SiTE Project Repository password is " + password
             ctx_list.append(
                 {
                     "username": username,
                     "first_name": firstname,
                     "last_name": lastname,
                     "email": email,
-                    "subject": "SiTE Repository Password announcement",
+                    "subject": "SiTE Project Repository Password announcement",
                     "msg": msg,
                 }
             )
@@ -229,6 +257,34 @@ class StudentViewSet(viewsets.ModelViewSet):
                 "message": "account created successfully",
             }
         )
+
+    def list(self, request):
+        all = None
+        batch=None
+        try:
+            all = request.GET["all"]
+            print(all)
+        except MultiValueDictKeyError:
+            pass
+
+        try:
+            batch = request.GET["batch"]
+        except MultiValueDictKeyError:
+            pass
+
+        query = Student.objects.all()
+        if batch != None:
+            query = query.filter(batch=""+batch)
+        if all == "False":
+            print("no all")
+            query = query.exclude(
+                user__in=User.objects.filter(
+                    members__in=Member.objects.all(),
+                )
+            )
+
+        serializer = StudentSerializerTwo(query, many=True)
+        return Response(serializer.data)
 
 
 class CoordinatorModelViewSet(ModelViewSet):

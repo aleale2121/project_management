@@ -154,7 +154,8 @@ class GroupSerializer(serializers.ModelSerializer):
             group_members_list = Member.objects.filter(group=current_batch_group)
             for group_member in group_members_list:
                 for g_member in g_members:
-                    if MemberSerializer(group_member).data["member"]["username"] == g_member:
+                    print(g_member)
+                    if MemberSerializer(group_member).data["member"]== g_member:
                         response = ""
                         if g_member == current_user.username:
                             response = "You have already joined " + current_batch_group.group_name

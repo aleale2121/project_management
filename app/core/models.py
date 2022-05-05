@@ -1,5 +1,9 @@
 from django.conf import settings
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -179,3 +183,26 @@ class TopProject(models.Model):
     created_at = models.DateTimeField(default=now, editable=True)
     updated_at = models.DateTimeField(default=now, editable=True)
 
+
+class ProjectTitle(models.Model):
+    class STATUS_CHOICES(models.TextChoices):
+        APPROVED = "APPROVED"
+        PENDING = "PENDING"
+        REJECTED = "REJECTED"
+
+    class LEVEL_CHOICES(models.IntegerChoices):
+        ONE = 1
+        TWO = 2
+        THREE = 3
+
+    class Meta:
+        db_table = "project_title"
+        unique_together = ["group","title_name","level"]
+
+
+    title_name = models.CharField(max_length=200)
+    title_description = models.TextField()
+    level = models.IntegerField(choices=LEVEL_CHOICES.choices)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    rejection_reason = models.CharField(max_length=1000, default=None)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES.choices)

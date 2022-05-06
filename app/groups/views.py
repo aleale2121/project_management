@@ -106,12 +106,13 @@ class MemberModelViewSet(ModelViewSet):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
+
         group = get_object_or_404(Group.objects, pk=group_pk)
         user = get_object_or_404(User.objects, username=request.data["member"])
-        member = get_object_or_404(Student.objects, pk=user.pk)
+        get_object_or_404(Student.objects, user=user.pk)
 
         request.data["group"] = group.pk
-        request.data["member"] = member.pk
+        request.data["member"] = user.pk
         return super(MemberModelViewSet, self).create(request)
 
     def update(self, request, group_pk=None, *args, **kwargs):

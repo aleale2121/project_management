@@ -1,5 +1,6 @@
 import os
 import uuid
+from linecache import cache
 
 from core.models import (
     Advisor,
@@ -13,6 +14,7 @@ from core.models import (
     User,
 )
 from django.db import IntegrityError
+from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.serializers import SerializerMethodField
@@ -155,7 +157,7 @@ class GroupSerializer(serializers.ModelSerializer):
             for group_member in group_members_list:
                 for g_member in g_members:
                     print(g_member)
-                    if MemberSerializer(group_member).data["member"]== g_member:
+                    if MemberSerializer(group_member).data["member"] == g_member:
                         response = ""
                         if g_member == current_user.username:
                             response = "You have already joined " + current_batch_group.group_name
@@ -213,6 +215,64 @@ class GroupSerializer(serializers.ModelSerializer):
             member_objects.append(Member(group=group, member=student))
 
         Member.objects.bulk_create(member_objects)
+        return group
+
+    def update(self, instance, validated_data):
+        current_user = self.context["request"].user
+        # u = User.objects.get(username='username31')
+        # print("---")
+        # print(u)
+        # print("---")
+        # u.set_password('password')
+        # u.save()
+        view = self.context.get('view')
+        group = get_object_or_404(Group.objects, pk=view.kwargs['pk'])
+        batch=get_object_or_404(Batch.objects, pk=group.batch)
+        if not batch.is_active:
+            raise  serializers.ValidationError({"error": "inactive group"})
+            
+        members_data = validated_data.pop("group_members")
+        student_list = []
+        for member_data in members_data:
+            user = None
+            try:
+                user = User.objects.get(username=member_data)
+                try:
+                    student = Student.objects.get(user=user, batch=group.batch)
+                    student_list.append(user)
+                    try:
+                        member = Member.objects.get(member=user)
+                        if member.group.pk != group.pk:
+                            response = (
+                                "student with username "
+                                + member_data
+                                + " Joined another group"
+                            )
+                            raise serializers.ValidationError({"error": response})
+                    except Member.DoesNotExist:
+                        print("hello")
+                except Student.DoesNotExist:
+                    response = (
+                        "student with username " + member_data + " is not registered for acadamic year"
+                    )
+                    raise serializers.ValidationError({"error": response})
+
+            except User.DoesNotExist:
+                response = "student with username " + member_data + " not found"
+                raise serializers.ValidationError({"error": response})
+        try:
+            if(group.group_name!=self.validated_data["group_name"]):
+                group.group_name=self.validated_data["group_name"]
+                group.save()
+        except IntegrityError as error:
+            raise serializers.ValidationError({"error": "group name already exists"})
+        
+        Member.objects.filter(group=group).delete()
+        member_objects = []
+        for student in student_list:
+            member_objects.append(Member(group=group, member=student))
+        Member.objects.bulk_create(member_objects)
+        Member.objects.get_or_create(group=group, member=student_list[len(student_list)-1])
         return group
 
 

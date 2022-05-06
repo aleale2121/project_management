@@ -1,5 +1,4 @@
 import csv
-from xmlrpc.client import Boolean
 
 from django.utils.datastructures import MultiValueDictKeyError
 from core.models import Advisor, Batch, Coordinator, Group, Member, Staff, Student, User
@@ -263,7 +262,6 @@ class StudentViewSet(viewsets.ModelViewSet):
         batch=None
         try:
             all = request.GET["all"]
-            print(all)
         except MultiValueDictKeyError:
             pass
 
@@ -276,7 +274,6 @@ class StudentViewSet(viewsets.ModelViewSet):
         if batch != None:
             query = query.filter(batch=""+batch)
         if all == "False":
-            print("no all")
             query = query.exclude(
                 user__in=User.objects.filter(
                     members__in=Member.objects.all(),

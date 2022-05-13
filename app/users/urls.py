@@ -8,6 +8,7 @@ app_name = "users"
 router = routers.SimpleRouter(trailing_slash=False)
 
 router.register(r"admins", views.AdminViewSet, basename="admins")
+router.register(r"users", views.UserViewSet, basename="users")
 router.register(r"staffs", views.StaffViewSet, basename="staffs")
 router.register(r"batches", views.BatchModelViewSet, basename="batches")
 # router.register(r"students", views.StudentViewSet, basename="students")
@@ -26,10 +27,8 @@ urlpatterns = [
     # )
     path("login/", views.CreateTokenView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
-    path('students/', student_list, name='student-list'),
-    path('students/(?P<pk>[^/.]+)', student_detail, name='student-detail'),
     path("me/", views.ManageUserView.as_view(), name="me"),
-    # examiner_groups_view
+    path('students/', student_list, name='student-list'),
     path("advisor-students/", views.advisor_groups_view, name="advisor-students"),
     path("examiner-students/", views.examiner_groups_view, name="examiner-students"),
     path('', include(router.urls)),

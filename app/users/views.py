@@ -1,6 +1,5 @@
 import csv
-import  json
-from django.forms.models import model_to_dict
+import json
 
 from core.models import Advisor, Batch, Coordinator, Group, Member, Staff, Student, User
 from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff
@@ -8,6 +7,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.core.mail import EmailMessage, send_mail, send_mass_mail
+from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
 from django.utils.datastructures import MultiValueDictKeyError
 from groups.serializers import ReadGroupSerializer
@@ -120,6 +120,13 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
+class UserViewSet(ModelViewSet):
+    """Manage the authenticated user"""
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (permissions.IsAdminUser,)
+
+
 class LogoutView(APIView):
     def post(self, request, format=None):
         request.auth.delete()
@@ -152,6 +159,7 @@ def advisor_groups_view(request, format=None):
         except Batch.DoesNotExist:
             pass
     return Response(((advisor_to.data)))
+
 
 @api_view(["GET"])
 @permission_classes((IsStaff,))

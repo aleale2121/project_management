@@ -1,6 +1,5 @@
 import csv
 
-from django.utils.datastructures import MultiValueDictKeyError
 from core.models import Advisor, Batch, Coordinator, Group, Member, Staff, Student, User
 from core.permissions import IsAdmin, IsAdminOrReadOnly
 from django.contrib.auth.base_user import BaseUserManager
@@ -8,6 +7,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.core.mail import EmailMessage, send_mail, send_mass_mail
 from django.shortcuts import get_object_or_404
+from django.utils.datastructures import MultiValueDictKeyError
 from groups.serializers import ReadGroupSerializer
 from rest_framework import authentication, generics, permissions, status, viewsets
 from rest_framework.authtoken.models import Token
@@ -159,18 +159,13 @@ class StaffViewSet(ModelViewSet):
         serializer = StaffRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         staff = serializer.save()
-        staff_serialize = StaffSerializer(staff)
+        staff_serialize = StaffSerializerTwo(staff)
         data = staff_serialize.data
 
-        return Response(
-            {
-                "user_info": data,
-                "message": "account created successfully",
-            }
-        )
+        return Response(data)
 
 
-class StudentViewSet(viewsets.ModelViewSet):
+class StudentViewSet(ModelViewSet):
 
     filterset_fields = [
         "batch",
@@ -227,7 +222,7 @@ class StudentViewSet(viewsets.ModelViewSet):
                     "first_name": firstname,
                     "last_name": lastname,
                     "email": email,
-                    "subject": "SiTE Project Repository Password announcement",
+                    "subject": "SiTE Project Repository Password",
                     "msg": msg,
                 }
             )
@@ -244,22 +239,18 @@ class StudentViewSet(viewsets.ModelViewSet):
         return Response("Students registered  successfully")
 
     def create(self, request, *args, **kwargs):
+        print("**********create student")
         serializer = StudentRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         student = serializer.save()
-        student_serialize = StudentSerializer(student)
+        student_serialize = StudentSerializerTwo(student)
         data = student_serialize.data
 
-        return Response(
-            {
-                "user_info": data,
-                "message": "account created successfully",
-            }
-        )
+        return Response(data)
 
     def list(self, request):
         all = None
-        batch=None
+        batch = None
         try:
             all = request.GET["all"]
         except MultiValueDictKeyError:
@@ -272,7 +263,7 @@ class StudentViewSet(viewsets.ModelViewSet):
 
         query = Student.objects.all()
         if batch != None:
-            query = query.filter(batch=""+batch)
+            query = query.filter(batch="" + batch)
         if all == "False":
             query = query.exclude(
                 user__in=User.objects.filter(
@@ -282,6 +273,17 @@ class StudentViewSet(viewsets.ModelViewSet):
 
         serializer = StudentSerializerTwo(query, many=True)
         return Response(serializer.data)
+
+    def destroy(self, request):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+        except Student.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def perform_destroy(self, instance):
+        instance.delete()
 
 
 class CoordinatorModelViewSet(ModelViewSet):

@@ -1,7 +1,9 @@
 import csv
+import  json
+from django.forms.models import model_to_dict
 
 from core.models import Advisor, Batch, Coordinator, Group, Member, Staff, Student, User
-from core.permissions import IsAdmin, IsAdminOrReadOnly
+from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
@@ -12,7 +14,7 @@ from groups.serializers import ReadGroupSerializer
 from rest_framework import authentication, generics, permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import APIView, ObtainAuthToken
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
@@ -122,6 +124,56 @@ class LogoutView(APIView):
     def post(self, request, format=None):
         request.auth.delete()
         return Response(status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes((IsStaff,))
+def advisor_groups_view(request, format=None):
+    user = request.user
+    active_batch = None
+    try:
+        active_batch = Batch.objects.get(is_active=True)
+    except Batch.DoesNotExist:
+        pass
+
+    advisor_to = []
+    examiner_to = []
+    if active_batch != None:
+        try:
+            advisor_to = ReadGroupSerializer(
+                Group.objects.filter(batch=active_batch).filter(advisors__advisor__exact=user),
+                many=True,
+            )
+            examiner_to = ReadGroupSerializer(
+                Group.objects.filter(batch=active_batch).filter(examiners__examiner__exact=user),
+                many=True,
+            )
+
+        except Batch.DoesNotExist:
+            pass
+    return Response(((advisor_to.data)))
+
+@api_view(["GET"])
+@permission_classes((IsStaff,))
+def examiner_groups_view(request, format=None):
+    user = request.user
+    active_batch = None
+    try:
+        active_batch = Batch.objects.get(is_active=True)
+    except Batch.DoesNotExist:
+        pass
+
+    examiner_to = []
+    if active_batch != None:
+        try:
+            examiner_to = ReadGroupSerializer(
+                Group.objects.filter(batch=active_batch).filter(examiners__examiner__exact=user),
+                many=True,
+            )
+
+        except Batch.DoesNotExist:
+            pass
+    return Response(((examiner_to.data)))
 
 
 class AdminViewSet(ModelViewSet):

@@ -29,6 +29,9 @@ urlpatterns = [
     path('students/', student_list, name='student-list'),
     path('students/(?P<pk>[^/.]+)', student_detail, name='student-detail'),
     path("me/", views.ManageUserView.as_view(), name="me"),
+    # examiner_groups_view
+    path("advisor-students/", views.advisor_groups_view, name="advisor-students"),
+    path("examiner-students/", views.examiner_groups_view, name="examiner-students"),
     path('', include(router.urls)),
 ] 
 # + router.urls

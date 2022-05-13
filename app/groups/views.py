@@ -11,12 +11,14 @@ from core.models import (
     Student,
     User,
 )
-from core.permissions import IsCoordinatorOrReadOnly, IsStudentOrReadOnly
+from core.permissions import IsCoordinatorOrReadOnly, IsStaffOrReadOnly, IsStudentOrReadOnly
 from django.core import serializers as coreSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action, api_view, permission_classes
+
 
 from groups.serializers import (
     GroupSerializer,
@@ -204,6 +206,50 @@ class ExaminerModelViewSet(ModelViewSet):
 
     def perform_destroy(self, instance):
         instance.delete()
+
+
+
+
+@api_view(['GET'])
+def similarity_check(request, pk):
+    title = get_object_or_404(ProjectTitle.objects, pk=pk)
+    
+    allProjects = ProjectTitle.objects.all()
+    filtered = []
+    for prj in allProjects:
+        if prj.id != title.id:
+            filtered.append({"id": prj.id, "description": prj.title_description})
+    payload = {
+        "project": {
+            "id": title.id,
+            "description": title.title_description,
+        },
+        "comparableProjects":filtered
+    }
+    response = requests.post(
+        "https://sfpm-check-similarity-backend.herokuapp.com/api/check-similarity",
+        data=json.dumps(payload),
+        headers={
+            'Content-Type':'application/json',
+            'Accept':'*/*',
+            'Accept-Encoding':'gzip, deflate, br',
+            'Connection':'keep-alive'
+        }
+    )
+    print("\n similarity \n")
+    checkedProjects =  response.json()
+    similarProjects = []
+    for pro in checkedProjects:
+        for fPrj in allProjects:
+            if fPrj.id == pro['id']:
+                proDict=model_to_dict(fPrj)
+                proDict['similarity']=pro['similarity']
+                similarProjects.append(proDict)
+    return Response({
+        'project_title':model_to_dict( title ),
+        'similarProjects':similarProjects,
+    })
+
 
 
 class ProjectTitleModelViewSet(ModelViewSet):

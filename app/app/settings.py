@@ -89,24 +89,6 @@ DATABASES = {
         "PASSWORD": os.environ.get("DB_PASS"),
     }
 }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': os.environ.get('DATABASE_NAME'),
-#         'USER': os.environ.get('DATABASE_USER'),
-#         'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
-#         'HOST': os.environ.get('DATABASE_HOST'),
-#         'PORT': os.environ.get('DATABASE_PORT'),
-#     }
-# }
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
-#         "TEST": {"NAME": os.environ.get("TEST_DATABASE")},
-#     }
-# }
-# Heroku: Update database configuration from $DATABASE_URL.
 
 db_from_env = dj_database_url.config(engine="django.db.backends.postgresql_psycopg2", conn_max_age=600)
 DATABASES["default"].update(db_from_env)

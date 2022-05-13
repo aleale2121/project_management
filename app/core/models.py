@@ -1,5 +1,9 @@
 from django.conf import settings
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -111,15 +115,6 @@ class Examiner(models.Model):
         unique_together = ["group", "examiner"]
 
 
-class ProjectTitle(models.Model):
-    group = models.OneToOneField(Group, related_name="projecttitles", on_delete=models.CASCADE, primary_key=True)
-    title = models.CharField(max_length=25)
-    doc_path = models.CharField(max_length=500, blank=True)
-    description = models.CharField(max_length=1000, blank=True)
-    is_approved = models.BooleanField(default=False)
-
-
-# SubmissionType models
 class SubmissionType(models.Model):
     class Meta:
         db_table = "submission_types"
@@ -130,7 +125,6 @@ class SubmissionType(models.Model):
     updated_at = models.DateTimeField(default=now, editable=True)
 
 
-# SubmissionDeadLine model
 class SubmissionDeadLine(models.Model):
     name = models.ForeignKey(SubmissionType, on_delete=models.CASCADE, related_name="submission_type_deadline")
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="submission_deadline_batch")
@@ -141,7 +135,6 @@ class SubmissionDeadLine(models.Model):
         db_table = "submission_dead_lines"
 
 
-# StudentEvaluation model
 class StudentEvaluation(models.Model):
     class Meta:
         db_table = "student_evalaution"
@@ -157,15 +150,27 @@ class StudentEvaluation(models.Model):
     updated_at = models.DateTimeField(default=now, editable=True)
 
 
-# Title model
-class Title(models.Model):
-    class Meta:
-        db_table = "titles"
-        unique_together = ["name"]
+class ProjectTitle(models.Model):
+    class STATUS_CHOICES(models.TextChoices):
+        APPROVED = "APPROVED"
+        PENDING = "PENDING"
+        REJECTED = "REJECTED"
 
-    name = models.CharField(max_length=100, unique=True, primary_key=True)
-    created_at = models.DateTimeField(default=now, editable=True)
-    updated_at = models.DateTimeField(default=now, editable=True)
+    class NO_CHOICES(models.IntegerChoices):
+        ONE = 1
+        TWO = 2
+        THREE = 3
+
+    class Meta:
+        # db_table = "project_title"
+        unique_together = ["group","no"]
+
+    title_name = models.CharField(max_length=200)
+    title_description = models.TextField()
+    no = models.IntegerField(choices=NO_CHOICES.choices)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="project_titles")
+    rejection_reason = models.CharField(max_length=1000, default=None)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES.choices)
 
 
 # TopProject model
@@ -175,7 +180,8 @@ class TopProject(models.Model):
         unique_together = ["title_name"]
 
     level = models.IntegerField()
-    title_name = models.ForeignKey(Title, on_delete=models.CASCADE)
+    title_name = models.ForeignKey(ProjectTitle, on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=now, editable=True)
     updated_at = models.DateTimeField(default=now, editable=True)
+
 

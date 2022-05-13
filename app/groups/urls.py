@@ -10,6 +10,7 @@ router.register(r"groups", views.GroupsModelViewSet, basename="groups")
 
 groups_router = routers.NestedSimpleRouter(router, r'groups', lookup='group', trailing_slash=False)
 groups_router.register(r'members', views.MemberModelViewSet, basename='group-members')
+groups_router.register(r'titles', views.ProjectTitleModelViewSet, basename='group-titles')
 router.register(r"advisors", views.AdvisorModelViewSet, basename="groups-advisor")
 router.register(r"examiners", views.ExaminerModelViewSet, basename="groups-examiner")
 

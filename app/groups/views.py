@@ -1,11 +1,13 @@
+from constants.constants import MODEL_RECORD_NOT_FOUND, MODEL_UPDATE_FAILED
+from pkg.util import error_response
 from core.models import (
     Advisor,
     Batch,
     Examiner,
     Group,
     Member,
-    ProjectTitle,
     Student,
+    Title,
     User,
 )
 from core.permissions import (
@@ -22,11 +24,13 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from django.db import transaction
+from rest_framework.decorators import action
+
 
 from groups.serializers import (
     GroupSerializer,
     MemberSerializer,
-    ProjectTitleSerializer,
     ReadAdvisorSerializer,
     ReadExaminerSerializer,
     ReadGroupSerializer,
@@ -40,9 +44,10 @@ class GroupsModelViewSet(ModelViewSet):
     filterset_fields = ["batch", "group_name"]
     queryset = Group.objects.all()
 
-    permission_classes = [
-        IsStudentOrReadOnly,
-    ]
+
+    # permission_classes = [
+    #     IsStudentOrReadOnly,
+    # ]
 
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
@@ -50,6 +55,7 @@ class GroupsModelViewSet(ModelViewSet):
         return GroupSerializer
 
     def update(self, request, *args, **kwargs):
+        print("updating ..")
         self.methods = ("put",)
         response = self.check_membership(request, kwargs["pk"])
         if response != None:
@@ -68,8 +74,8 @@ class GroupsModelViewSet(ModelViewSet):
         except Group.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
     def perform_destroy(self, instance):
+        
         instance.delete()
 
     def check_membership(self, request, id):
@@ -78,30 +84,48 @@ class GroupsModelViewSet(ModelViewSet):
             student = Student.objects.get(user=request.user)
         except Student.DoesNotExist:
             return Response({"error": "you are not student"})
-
         group = None
         try:
             group = Group.objects.get(id=id)
         except Group.DoesNotExist:
             return Response({"error": "group doesnot exist"})
-
         try:
             member = Member.objects.get(group=group, member=request.user)
             # return Response({"hello": "helopp"})
         except Member.DoesNotExist:
             return Response({"error": "your are not authorized to edit the group"})
-
+    @action(
+        detail=True,
+        methods=["POST"],
+        permission_classes=[IsAdmin],
+        url_path="(?P<batch>[^/.]+)",
+    )
+    def assignTitle(self,request,pk=None,batch=None):
+        print("assign Title to groups",pk,batch)
+        title_obj=None
+        try:
+              title_obj=Title.objects.get(id=request.data['title'])
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "Title")
+            return Response(res, content_type="application/json")
+        try:
+            group=Group.objects.get(id=pk,batch=batch)
+            group.title=title_obj
+            group.save()
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "Group")
+            return Response(res, content_type="application/json")
+        serializer=GroupSerializer(group)
+        return Response(serializer.data)
 
 class MemberModelViewSet(ModelViewSet):
-
-    permission_classes = (IsStudentOrReadOnly,)
+    # permission_classes = (IsStudentOrReadOnly,)
     queryset = Member.objects.all()
-
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
             return ReadMembersSerializer
         return MemberSerializer
-
+    @transaction.atomic
     def create(self, request, group_pk=None):
         response = self.check_membership(request, group_pk)
         if response != None:
@@ -123,7 +147,6 @@ class MemberModelViewSet(ModelViewSet):
         return super(MemberModelViewSet, self).update(request, *args, **kwargs)
 
     def list(self, request, group_pk=None):
-
         queryset = Member.objects.filter(group=group_pk)
         serializer = ReadMembersSerializer(queryset, many=True)
         return Response(serializer.data)
@@ -164,15 +187,12 @@ class MemberModelViewSet(ModelViewSet):
 
 
 class AdvisorModelViewSet(ModelViewSet):
-
-    permission_classes = [IsCoordinatorOrReadOnly]
+    # permission_classes = [IsCoordinatorOrReadOnly]
     queryset = Advisor.objects.all()
-
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
             return ReadAdvisorSerializer
         return WriteAdvisorSerialzer
-
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
@@ -180,15 +200,12 @@ class AdvisorModelViewSet(ModelViewSet):
         except Advisor.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
     def perform_destroy(self, instance):
         instance.delete()
 
 
 class ExaminerModelViewSet(ModelViewSet):
-
-    permission_classes = [IsCoordinatorOrReadOnly]
-
+    # permission_classes = [IsCoordinatorOrReadOnly]
     def get_queryset(self):
         return Examiner.objects.all()
 
@@ -196,7 +213,6 @@ class ExaminerModelViewSet(ModelViewSet):
         if self.action in ("list", "retrieve"):
             return ReadExaminerSerializer
         return WriteExaminerSerialzer
-
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
@@ -204,15 +220,13 @@ class ExaminerModelViewSet(ModelViewSet):
         except Examiner.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
     def perform_destroy(self, instance):
         instance.delete()
 
 
-class ProjectTitleViewSet(ModelViewSet):
-    permission_classes = [IsStudent, IsReadOnly]
-    serializer_class = ProjectTitleSerializer
-
-    def get_queryset(self):
-        projecttitles = ProjectTitle.objects.all()
-        return projecttitles
+# class ProjectTitleViewSet(ModelViewSet):
+#     # permission_classes = [IsStudent, IsReadOnly]
+#     serializer_class = ProjectTitleSerializer
+#     def get_queryset(self):
+#         projecttitles = ProjectTitle.objects.all()
+#         return projecttitles

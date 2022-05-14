@@ -21,8 +21,8 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
     filter_fields = ["name", "batch", "dead_line"]
 
     def get_queryset(self):
-        evaluations = SubmissionDeadLine.objects.all()
-        return evaluations
+        deadlines = SubmissionDeadLine.objects.all().order_by("id")
+        return deadlines
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -63,7 +63,12 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
         pk = kwargs["pk"]
         if pk:
             pk = int(pk)
-        sub_dead_line = SubmissionDeadLine.objects.get(pk=pk)
+        sub_dead_line_obj =None
+        try:
+            sub_dead_line_obj =  SubmissionDeadLine.objects.get(pk=pk)
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "SubmissionDeadLine")
+            return Response(res, content_type="application/json")
 
         if data.get("name"):
             sub_dead_line.name = data["name"]

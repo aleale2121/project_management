@@ -33,7 +33,7 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
             return Response(res, content_type="application/json")
         else:
             pass
-        new_sub_type_obj = SubmissionType.objects.create(name=data["name"])
+        new_sub_type_obj = SubmissionType.objects.create(name=data["name"],max_mark=data["max_mark"])
         serializer = SubmissionTypeSerializer(new_sub_type_obj)
         data = success_response(serializer.data)
         return Response((data))
@@ -45,8 +45,9 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
         if pk:
             pk = str(pk)
         sub__type = SubmissionType.objects.get(name=pk)
-        if data.get("name"):
-            sub__type.name = data["name"]
+        print("===>",data["max_mark"])
+        if data.get("max_mark"):
+            sub__type.max_mark = data["max_mark"]
         else:
             pass
         sub__type.save()

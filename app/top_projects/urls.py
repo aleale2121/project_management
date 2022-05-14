@@ -1,12 +1,8 @@
-from django.urls import path
+from rest_framework import routers
 
-from . import views
+from .views import TopProjectViewSet
 
-app_name = "top_projects"
-urlpatterns = [
-    path("top-projects", views.GetAllTopProject, name="top-projects_list"),
-    path("top-projects", views.GetTopProjectByID, name="top-projects_list"),
-    path("top-projects", views.CreateTopProject, name="create_top-projects"),
-    path("top-projects/<int:pk>/", views.UpdateTopProject, name="update_top-projects"),
-    path("top-projects/<int:pk>/", views.DeleteTopProject, name="delete_top-projects"),
-]
+router = routers.SimpleRouter(trailing_slash=False)
+router.register("top-projects", TopProjectViewSet, basename="top_projetcs")
+urlpatterns = router.urls
+

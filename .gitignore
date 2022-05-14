@@ -150,3 +150,11 @@ tmp/
 
 Makefile
 docker-compose.yml
+venv/
+myvenv/bin
+myvenv/bin/pip3.*
+myvenv/bin/*
+**/bin/*
+2014.csv
+2013.csv
+tmp/

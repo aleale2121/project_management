@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "groups",
     "evaluations",
     "titles",
+    "semisters",
     "submission_types",
     "submission_dead_lines",
     "top_projects",
@@ -170,13 +171,51 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 100,
 }
 
+
+
+
+# RabbitMQ Configuration
+RABBIT_HOST = "localhost"
+RABBIT_PORT = "5672"
+RABBIT_VIRTUAL_HOST = "/"
+RABBITMQ_ROUTING_KEY = "email_consumer"
+# RabbitMQ Credentials
+RABBIT_USERNAME = "guest"
+RABBIT_PASSWORD = "guest"
+DJANGO_SETTINGS_MODULE= 'app.settings'
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_SSL=False
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'yidegaait2010@gmail.com'
+EMAIL_HOST_PASSWORD = 'wdivhgmrvjpqqieo' #past the key or password app here
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'yidegaait2010@gmail.com'
+CELERY_BROKER_URL = 'amqp://rabbitmq'
+BROKER_URL = 'amqp://rabbitmq'
+CELERY_ENABLED = True
+FLOWER_PORT= 5566
+CELERY_DEFAULT_EXCHANGE_TYPE: 'fanot'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACKS_LATE = True
+CELERYD_PREFETCH_MULTIPLIER = 1
+
+
+# ADD CELERY BYPASS LOG
+CELERYD_HIJACK_ROOT_LOGGER = False
+
+# CREATE QUEUE TO RABBITMQ
+EXCHANGES = {
+    # a reference name for this config, used when attaching handlers
+    'default': {
+        'name': 'data',  # actual name of exchange in RabbitMQ
+        'type': 'mail_consumer',  # an AMQP exchange type
+    },
+}
+
 AUTH_USER_MODEL = "core.User"
 ACCOUNT_UNIQUE_EMAIL = True
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'alefewyimer2@gmail.com'
-EMAIL_HOST_PASSWORD = 'bfbgnezhdpspowzx' #past the key or password app here
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'alefewyimer2@gmail.com'

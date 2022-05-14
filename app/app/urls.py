@@ -11,6 +11,7 @@ urlpatterns = [
     path("api/", include("groups.urls")),
     path("api/", include("submission_dead_lines.urls")),
     path("api/", include("evaluations.urls")),
+    path("api/", include("semisters.urls")),
     path("api/", include("titles.urls")),
     path("api/", include("submission_types.urls")),
     path("api/", include("top_projects.urls")),

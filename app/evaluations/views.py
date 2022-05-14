@@ -1,14 +1,19 @@
 import json
+from urllib.request import proxy_bypass
 
-from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
+from constants.constants import FORBIDDEN_REQUEST_FOUND, MODEL_ALREADY_EXIST, MODEL_CREATION_FAILED, MODEL_RECORD_NOT_FOUND
 from core.models import Examiner, Member, StudentEvaluation, SubmissionType
 from django.db import transaction
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from pkg.util import error_response, success_response
+from rest_framework.decorators import action
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
+from core.permissions import IsAdmin
+from django.db.models import  Sum
+# from django.core import serializers
 
 from .serializer import StudentEvaluationSerializer
 
@@ -37,11 +42,31 @@ class StudentEvaluaionViewSet(viewsets.ModelViewSet):
     filter_class = StudentEvaluationFilter
     ordering_fields = ["examiner", "submission_type", "member"]
     search_fields = ["examiner", "submission_type", "member"]
-
+    filterset_fields = [
+        "batch","group","id"
+    ]
+    queryset=None
     def get_queryset(self):
         print("fetching ...")
-        evaluations = StudentEvaluation.objects.all()
-        return evaluations
+        queryset = StudentEvaluation.objects.all()
+        return queryset
+    
+    @action(
+        detail=False,
+        methods=["GET"],
+        permission_classes=[IsAdmin],
+        url_path="(?P<batch>[^/.]+)/(?P<group>[^/.]+)/(?P<id>[^/.]+)",
+    )
+    def getComment(self, request,batch,group,id):
+        comment=None
+        count=StudentEvaluation.objects.filter(member__group=group,member__group__batch=batch,member__member=id).count()
+        if (count==4):
+            comment=StudentEvaluation.objects.filter(member__group=group,member__group__batch=batch,member__member=id).values("member_id","submission_type_id","comment","mark")
+        else:  
+            comment=StudentEvaluation.objects.filter(member__group=group,member__group__batch=batch,member__member=id).values("submission_type","comment")
+        return Response(comment)
+
+
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -68,8 +93,15 @@ class StudentEvaluaionViewSet(viewsets.ModelViewSet):
             except:
                 res = error_response(request, MODEL_RECORD_NOT_FOUND, "Examiner")
                 return Response(res, content_type="application/json")
+            if (data["mark"]>=0 and data["mark"]<=submission_type_obj.max_mark):
+                pass
+            else:
+                res = error_response(request, FORBIDDEN_REQUEST_FOUND, "StudentEvalaution")
+                return Response(res, content_type="application/json")
             count = StudentEvaluation.objects.filter(
-                submission_type=submission_type_obj, examiner=examiner_obj, member=member_obj
+                submission_type=submission_type_obj,
+                 examiner=examiner_obj, 
+                 member=member_obj
             ).count()
 
             if count > 0:
@@ -77,6 +109,11 @@ class StudentEvaluaionViewSet(viewsets.ModelViewSet):
                 return Response(res, content_type="application/json")
             else:
                 pass
+            print(member_obj.group.id," <=> ",examiner_obj.group.id)
+            if(member_obj.group.id!=examiner_obj.group.id):
+                res = error_response(request, MODEL_CREATION_FAILED, "Examiner")
+                return Response(res, content_type="application/json")
+            
             new_student_obj = StudentEvaluation.objects.create(
                 submission_type=submission_type_obj,
                 examiner=examiner_obj,
@@ -84,7 +121,6 @@ class StudentEvaluaionViewSet(viewsets.ModelViewSet):
                 mark=data["mark"],
                 comment=data["comment"],
             )
-
         serializer = StudentEvaluationSerializer(new_student_obj)
         data = success_response(serializer.data)
         return Response((data))
@@ -94,14 +130,24 @@ class StudentEvaluaionViewSet(viewsets.ModelViewSet):
         data = request.data
         print(type(data))
         pk = kwargs["pk"]
+        global student_result
         if pk:
             pk = int(pk)
-        student_result = StudentEvaluation.objects.get(pk=pk)
+        try:
+            student_result = StudentEvaluation.objects.get(pk=pk)
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "StudentEvaluation")
+            return Response(res, content_type="application/json")
 
         if data.get("comment"):
             student_result.comment = data["comment"]
         else:
             pass
+        if (data["mark"]>=0 and data["mark"]<=submission_type_obj.max_mark):
+            pass
+        else:
+            res = error_response(request, FORBIDDEN_REQUEST_FOUND, "StudentEvalaution")
+            return Response(res, content_type="application/json")
         if data.get("mark"):
             student_result.mark = float(data["mark"])
         else:
@@ -109,7 +155,6 @@ class StudentEvaluaionViewSet(viewsets.ModelViewSet):
         student_result.save()
         print("updated.")
         serializer = StudentEvaluationSerializer(student_result)
-
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):

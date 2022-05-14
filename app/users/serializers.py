@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
 
-
+#Meta UserName is an identification number 
 class AuthTokenSerializer(serializers.Serializer):
     """Serializer for the user authenticate object"""
 
@@ -137,16 +137,15 @@ class StaffSerializerThree(serializers.ModelSerializer):
 
 class AdminRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for the admin object"""
-
     password2 = serializers.CharField(style={"input_type": "password"}, write_only=True)
-
     class Meta:
         model = User
         fields = ["username", "email", "password", "password2"]
         extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
 
     def save(self, **kwargs):
-        user = User(username=self.validated_data["username"], email=self.validated_data["email"])
+        user = User(username=self.validated_data["username"],
+         email=self.validated_data["email"])
         password = (self.validated_data["password"],)
         password2 = (self.validated_data["password2"],)
         if password != password2:
@@ -156,7 +155,6 @@ class AdminRegistrationSerializer(serializers.ModelSerializer):
         user.is_staff = True
         user.save()
         return user
-
 
 class StaffRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for the staff registration"""
@@ -194,7 +192,9 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
 
     def save(self, **kwargs):
-        user = User(username=self.validated_data["username"], email=self.validated_data["email"])
+        user = User(
+            username=self.validated_data["username"],
+        email=self.validated_data["email"])
         password = (self.validated_data["password"],)
         password2 = (self.validated_data["password2"],)
         if password != password2:
@@ -203,6 +203,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         user.is_superuser = False
         user.is_student = True
         user.save()
+
         student = Student.objects.create(
             user=user,
             batch=self.validated_data["batch"],
@@ -215,11 +216,6 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
 class CoordinatorSerialzer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all())
     batch = serializers.SlugRelatedField(slug_field="name", queryset=Batch.objects.all())
-
     class Meta:
         model = Coordinator
-        fields = (
-            "id",
-            "batch",
-            "user",
-        )
+        fields = ("id","batch","user",)

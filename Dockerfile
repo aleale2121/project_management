@@ -7,6 +7,7 @@ COPY ./requirements.txt /requirements.txt
 RUN pip install -r ./requirements.txt
 
 
+
 FROM python:3.10-alpine
 LABEL Author = SiteGroup5
 
@@ -23,10 +24,33 @@ RUN apk update \
     libpq-dev libc-dev linux-headers \
     libffi-dev python3-dev
 
-
-
-RUN pip install --upgrade pip
-RUN pip install psycopg2-binary
+# #New
+# RUN pip install --upgrade pip
+# RUN pip install celery
+# RUN pip install celery-message-consumer
+# RUN pip install celery
+# RUN pip install celery-message-consumer
+# RUN pip install pika
+# RUN pip install amqp
+# RUN pip install asgiref
+# RUN pip install billiard
+# RUN pip install celery
+# RUN pip install click
+# RUN pip install click-didyoumean
+# RUN pip install click-repl
+# RUN pip install Django
+# RUN pip install kombu
+# RUN pip install prompt-toolkit
+# RUN pip install pytz
+# RUN pip install six
+# RUN pip install sqlparse
+# RUN pip install vine
+# RUN pip install wcwidth
+# RUN pip install django-celery-results
+# RUN pip install Redis
+# RUN pip install flower
+# RUN pip install pytest
+# RUN pip install pytest-django
 
 RUN mkdir /app
 WORKDIR /app

@@ -1,13 +1,11 @@
 import csv
-import json
 
 from core.models import Advisor, Batch, Coordinator, Group, Member, Staff, Student, User
 from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
-from django.core.mail import EmailMessage, send_mail, send_mass_mail
-from django.forms.models import model_to_dict
+from django.core.mail import send_mass_mail
 from django.shortcuts import get_object_or_404
 from django.utils.datastructures import MultiValueDictKeyError
 from groups.serializers import ReadGroupSerializer
@@ -122,6 +120,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
 class UserViewSet(ModelViewSet):
     """Manage the authenticated user"""
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (permissions.IsAdminUser,)
@@ -144,15 +143,10 @@ def advisor_groups_view(request, format=None):
         pass
 
     advisor_to = []
-    examiner_to = []
     if active_batch != None:
         try:
             advisor_to = ReadGroupSerializer(
                 Group.objects.filter(batch=active_batch).filter(advisors__advisor__exact=user),
-                many=True,
-            )
-            examiner_to = ReadGroupSerializer(
-                Group.objects.filter(batch=active_batch).filter(examiners__examiner__exact=user),
                 many=True,
             )
 
@@ -224,15 +218,29 @@ class StaffViewSet(ModelViewSet):
 
         return Response(data)
 
+    def update(self, request, *args, **kwargs):
+        staff = get_object_or_404(Staff, pk=kwargs["pk"])
+        serializer = StaffRegistrationSerializer(
+            staff.user,
+            data=request.data,
+            context={"request": request, "view": self},
+        )
+        serializer.is_valid(raise_exception=True)
+        staff = serializer.updateStaff()
+        staff_serialize = StaffSerializerTwo(staff)
+        data = staff_serialize.data
+        return Response(data)
 
-class StudentViewSet(ModelViewSet):
+
+class StudentModelViewSet(ModelViewSet):
 
     filterset_fields = [
         "batch",
     ]
-
     queryset = Student.objects.all()
-    serializer_class = StudentSerializerTwo
+    permission_classes = [
+        IsAdminOrReadOnly,
+    ]
 
     @action(
         detail=False,
@@ -299,7 +307,6 @@ class StudentViewSet(ModelViewSet):
         return Response("Students registered  successfully")
 
     def create(self, request, *args, **kwargs):
-        print("**********create student")
         serializer = StudentRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         student = serializer.save()
@@ -308,7 +315,26 @@ class StudentViewSet(ModelViewSet):
 
         return Response(data)
 
-    def list(self, request):
+    def update(self, request, *args, **kwargs):
+        student = get_object_or_404(Student, pk=kwargs["pk"])
+        serializer = StudentRegistrationSerializer(
+            student.user,
+            data=request.data,
+            context={"request": request, "view": self},
+        )
+        serializer.is_valid(raise_exception=True)
+        get_object_or_404(Batch, name=request.data["batch"])
+        student = serializer.updateStudent()
+        student_serialize = StudentSerializerTwo(student)
+        data = student_serialize.data
+        return Response(data)
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return StudentSerializerTwo
+        return StudentRegistrationSerializer
+
+    def list(self, request, *args, **kwargs):
         all = None
         batch = None
         try:
@@ -334,7 +360,7 @@ class StudentViewSet(ModelViewSet):
         serializer = StudentSerializerTwo(query, many=True)
         return Response(serializer.data)
 
-    def destroy(self, request):
+    def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
             self.perform_destroy(instance)

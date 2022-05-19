@@ -231,6 +231,74 @@ class StaffViewSet(ModelViewSet):
         data = staff_serialize.data
         return Response(data)
 
+class StudentRegistrationModelViewSet(ModelViewSet):
+    queryset = Student.objects.all()
+    serializer_class = StudentRegistrationSerializer
+
+    @action(
+        detail=False,
+        methods=["POST"],
+        permission_classes=[IsAdmin],
+        url_path="(?P<batch>[^/.]+)",
+    )
+    def registration(self, request, batch):
+        """Register Students from CSV"""
+        batch = get_object_or_404(Batch, pk=batch)
+        if not batch.is_active:
+            return Response("batch is inactive", status=status.HTTP_400_BAD_REQUEST)
+        print(request)
+        file = request.FILES["file"]
+
+        content = file.read()
+        file_content = ContentFile(content)
+        file_name = fs.save("_tmp.csv", file_content)
+        tmp_file = fs.path(file_name)
+
+        csv_file = open(tmp_file, errors="ignore")
+        reader = csv.reader(csv_file)
+        next(reader)
+
+        student_list = []
+        ctx_list = []
+        for id_, row in enumerate(reader):
+            (username, email, firstname, lastname) = row
+            user = User(username=username, email=email)
+            batch_model = Batch(name=batch)
+            password = BaseUserManager().make_random_password()
+            user.is_student = True
+            user.set_password(password)
+            user.save()
+
+            student_list.append(
+                Student(
+                    user=user,
+                    batch=batch_model,
+                    first_name=firstname,
+                    last_name=lastname,
+                )
+            )
+            msg = "Your SiTE Project Repository password is " + password
+            ctx_list.append(
+                {
+                    "username": username,
+                    "first_name": firstname,
+                    "last_name": lastname,
+                    "email": email,
+                    "subject": "SiTE Project Repository Password",
+                    "msg": msg,
+                }
+            )
+
+        from_email = "alefewyimer2@gmail.com"
+        email_tuple = tuple()
+
+        for i in ctx_list:
+            email_tuple = email_tuple + ((i["subject"], i["msg"], from_email, [i["email"]]),)
+
+        fs.delete(tmp_file)
+        email_res = send_mass_mail((email_tuple), fail_silently=False)
+        Student.objects.bulk_create(student_list)
+        return Response("Students registered  successfully")
 
 class StudentModelViewSet(ModelViewSet):
 

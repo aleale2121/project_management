@@ -21,8 +21,8 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
     filter_fields = ["name", "batch", "dead_line"]
 
     def get_queryset(self):
-        evaluations = SubmissionDeadLine.objects.all()
-        return evaluations
+        deadlines = SubmissionDeadLine.objects.all().order_by("id")
+        return deadlines
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -63,26 +63,31 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
         pk = kwargs["pk"]
         if pk:
             pk = int(pk)
-        sub_dead_line = SubmissionDeadLine.objects.get(pk=pk)
+        sub_dead_line_obj =None
+        try:
+            sub_dead_line_obj =  SubmissionDeadLine.objects.get(pk=pk)
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "SubmissionDeadLine")
+            return Response(res, content_type="application/json")
 
         if data.get("name"):
-            sub_dead_line.name = data["name"]
+            sub_dead_line_obj.name = data["name"]
         else:
             pass
 
         if data.get("batch"):
-            sub_dead_line.batch = data["batch"]
+            sub_dead_line_obj.batch = data["batch"]
         else:
             pass
 
         if data.get("dead_line"):
-            sub_dead_line.dead_line = data["dead_line"]
+            sub_dead_line_obj.dead_line = data["dead_line"]
         else:
             pass
 
-        sub_dead_line.save()
+        sub_dead_line_obj.save()
         print("updated.")
-        serializer = SubmissionDeadLineSerializer(sub_dead_line)
+        serializer = SubmissionDeadLineSerializer(sub_dead_line_obj)
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):

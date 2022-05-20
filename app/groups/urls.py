@@ -1,6 +1,5 @@
 from django.urls import include, path
 from rest_framework_nested import routers
-
 from groups import views
 
 app_name = "groups"

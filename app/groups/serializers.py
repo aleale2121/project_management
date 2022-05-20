@@ -330,9 +330,7 @@ class WriteExaminerSerialzer(serializers.ModelSerializer):
 
     class Meta:
         model = Examiner
-
         fields = ("group", "examiner")
-
     def validate(self, data):
         username = data.get("examiner")
         try:

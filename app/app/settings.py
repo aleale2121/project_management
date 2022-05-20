@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY_DEFAULT = "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*%tu7wd6t90b8"
+SECRET_KEY_DEFAULT = "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*u7wd6t90b8"
 SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -30,19 +30,24 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # 'whitenoise.runserver_nostatic'
     "rest_framework",
     "corsheaders",
+    'django_celery_results',
     "rest_framework.authtoken",
     'django_filters',
     "core",
     "users",
+    "chatrooms",
+    "channels",
+    "drf_yasg",
     "groups",
     "evaluations",
     "titles",
+    "semisters",
     "submission_types",
     "submission_dead_lines",
     "top_projects",
+
 ]
 
 MIDDLEWARE = [
@@ -76,6 +81,27 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "app.wsgi.application"
+ASGI_APPLICATION = "app.routing.application"
+CHANNEL_LAYERS = {
+	'default': {
+		'BACKEND': 'channels_redis.core.RedisChannelLayer',
+		'CONFIG': {
+			"hosts": ['redis://redis:6379/0'],
+		},
+	},
+}
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+       'LOCATION': 'redis://redis:6379',
+    }
+}
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer"
+#     }
+# }
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
@@ -87,6 +113,7 @@ DATABASES = {
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "PASSWORD": os.environ.get("DB_PASS"),
+        'ATOMIC_REQUESTS': True,
     }
 }
 
@@ -127,9 +154,7 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 STATIC_ROOT = '/vol/web/static'
 MEDIA_ROOT = '/vol/web/media'
-
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = ["http://localhost:3000", "https://sfpm.herokuapp.com"]
@@ -151,14 +176,22 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     "PAGE_SIZE": 100,
 }
+DJANGO_SETTINGS_MODULE= 'app.settings'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_SSL=True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'yidegaait2010@gmail.com'
+EMAIL_HOST_PASSWORD = 'wdivhgmrvjpqqieo' #past the key or password app here
+EMAIL_PORT = 587
+EMAIL_USE_TLS = False
+DEFAULT_FROM_EMAIL = 'yidegaait2010@gmail.com'
+# Celery properties
+CELERY_BROKER_URL = 'amqp://admin:admin@rabbit:5672//'
+CELERY_RESULT_BACKEND = 'django-db'
+# REDIS_URL='redis://redis:6379/0'
+
 
 AUTH_USER_MODEL = "core.User"
 ACCOUNT_UNIQUE_EMAIL = True
+APPEND_SLASH = False
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'alefewyimer2@gmail.com'
-EMAIL_HOST_PASSWORD = 'bfbgnezhdpspowzx' #past the key or password app here
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'alefewyimer2@gmail.com'

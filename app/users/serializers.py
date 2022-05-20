@@ -11,8 +11,9 @@ from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
+from users import tasks
 
-
+#Meta UserName is an identification number 
 class AuthTokenSerializer(serializers.Serializer):
     """Serializer for the user authenticate object"""
 
@@ -35,7 +36,6 @@ class AuthTokenSerializer(serializers.Serializer):
 
 class BatchSerializer(serializers.ModelSerializer):
     """Serializer for the batch object"""
-
     class Meta:
         model = Batch
         fields = ("name", "is_active")
@@ -78,7 +78,6 @@ class StudentSerializer(serializers.ModelSerializer):
 
 class StudentSerializerTwo(serializers.ModelSerializer):
     """Serializer for the student object"""
-
     username = SerializerMethodField()
     email = SerializerMethodField()
     batch = SerializerMethodField()
@@ -107,7 +106,6 @@ class StudentSerializerTwo(serializers.ModelSerializer):
 
 class StaffSerializer(serializers.ModelSerializer):
     """Serializer for the user object"""
-
     user = UserSerializer()
 
     class Meta:
@@ -142,10 +140,8 @@ class StaffSerializerTwo(serializers.ModelSerializer):
 
 class StaffSerializerThree(serializers.ModelSerializer):
     """Serializer for the staff object"""
-
     username = SerializerMethodField()
     email = SerializerMethodField()
-
     class Meta:
         model = Staff
         fields = "__all__"
@@ -159,16 +155,15 @@ class StaffSerializerThree(serializers.ModelSerializer):
 
 class AdminRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for the admin object"""
-
     password2 = serializers.CharField(style={"input_type": "password"}, write_only=True)
-
     class Meta:
         model = User
         fields = ["username", "email", "password", "password2"]
         extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
 
     def save(self, **kwargs):
-        user = User(username=self.validated_data["username"], email=self.validated_data["email"])
+        user = User(username=self.validated_data["username"],
+        email=self.validated_data["email"])
         password = (self.validated_data["password"],)
         password2 = (self.validated_data["password2"],)
         if password != password2:
@@ -178,7 +173,6 @@ class AdminRegistrationSerializer(serializers.ModelSerializer):
         user.is_staff = True
         user.save()
         return user
-
 
 class StaffRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for the staff registration"""
@@ -202,52 +196,27 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
             first_name=self.validated_data["first_name"],
             last_name=self.validated_data["last_name"],
         )
-        from_email = "alefewyimer2@gmail.com"
-        send_mail(
-            "SiTE Project Repository Password",
-            password,
-            from_email,
-            [user.email],
-            fail_silently=False,
-        )
-        return staff
-    def updateStaff(self, **kwargs):
-        my_view = self.context['view']
-        my_view.kwargs['partial'] = True
-        staff_id = my_view.kwargs.get('pk')
-        staff=get_object_or_404(Staff, pk=staff_id)
-        change_pass = self.context['request'].query_params.get('change_pass', None)
-        email = self.validated_data.pop("email", None)
-        username = self.validated_data.pop("username",None)
-        user=get_object_or_404(User,username=staff.user.username)
-        if username:
-            user.username=username
-        if email:
-            user.email=email
-        user.save()
-        if change_pass==True:
-            password = BaseUserManager().make_random_password()
-            user.set_password(password)
-            from_email = "alefewyimer2@gmail.com"
-            send_mail(
-                "SiTE Project Repository Password",
-                password,
-                from_email,
-                [user.email],
-                fail_silently=False,
-            )
-        staff = super().update(staff, self.validated_data)
-        staff.user=user
+        from_email = "yidegaait2010@gmail.com"
+        subject="Dear "+self.validated_data["first_name"]+" "+self.validated_data["last_name"]
+        message=password+" is your password for site repository management application,don't share to anybody!"
+        fromMail=from_email,
+        toArr=[user.email],
+        email={}
+        email["subject"]=subject
+        email["body"]=message
+        email["from"]=fromMail
+        email["to"]=toArr
+        body={"type":"single","data":email}            
+        tasks.publish_message(body)
+        print("email sent")
         return staff
 
 
 class StudentRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for the student registration"""
-
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
     batch = serializers.SlugRelatedField(slug_field="name", queryset=Batch.objects.all())
-
     class Meta:
         model = User
         fields = ["username", "email", "batch", "first_name", "last_name"]
@@ -259,20 +228,26 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         user.is_superuser = False
         user.is_student = True
         user.save()
+
         student = Student.objects.create(
             user=user,
             batch=self.validated_data["batch"],
             first_name=self.validated_data["first_name"],
             last_name=self.validated_data["last_name"],
         )
-        from_email = "alefewyimer2@gmail.com"
-        send_mail(
-            "SiTE Project Repository Password",
-            password,
-            from_email,
-            [user.email],
-            fail_silently=False,
-        )
+        from_email = "yidegaait2010@gmail.com"
+        subject="Dear "+self.validated_data["first_name"]+" "+self.validated_data["last_name"]
+        message=password+" is your password for site repository management application,don't share to anybody!"
+        fromMail=from_email,
+        toArr=[user.email],
+        email={}
+        email["subject"]=subject
+        email["body"]=message
+        email["from"]=fromMail
+        email["to"]=toArr
+        body={"type":"single","data":email}            
+        tasks.publish_message(body)
+        print("email sent")
         return student
     def updateStudent(self, **kwargs):
         my_view = self.context['view']
@@ -308,11 +283,6 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
 class CoordinatorSerialzer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all())
     batch = serializers.SlugRelatedField(slug_field="name", queryset=Batch.objects.all())
-
     class Meta:
         model = Coordinator
-        fields = (
-            "id",
-            "batch",
-            "user",
-        )
+        fields = ("id","batch","user",)

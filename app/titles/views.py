@@ -9,13 +9,12 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 from .serializer import TitleSerializer
 
-
 class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
-    ordering_fields = ["name"]
-    search_fields = ["name"]
-    filter_fields = ["name"]
+    filter_backends  = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    ordering_fields  = ["id"]
+    search_fields    = ["id"]
+    filter_fields    = ["id"]
 
     def get_queryset(self):
         titles = ProjectTitle.objects.all()

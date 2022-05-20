@@ -15,6 +15,7 @@ from core.models import (
     User,
 )
 from core.permissions import IsCoordinatorOrReadOnly, IsStudentOrReadOnly
+from core.permissions import IsCoordinatorOrReadOnly, IsStaffOrReadOnly, IsStudentOrReadOnly
 from django.core import serializers as coreSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -24,6 +25,7 @@ from django.db import transaction
 from rest_framework.decorators import action
 from core.permissions import IsAdmin, IsAdminOrReadOnly
 
+from rest_framework.decorators import action, api_view, permission_classes
 
 
 from groups.serializers import (
@@ -127,13 +129,13 @@ class MemberModelViewSet(ModelViewSet):
         if response != None:
             return response
 
-        group = Group.objects.get(id=group_pk)
-        user = User.objects.get(username=request.data["member"])
-        Student.objects.get(user=user.pk)
+        group = get_object_or_404(Group.objects, pk=group_pk)
+        user = get_object_or_404(User.objects, username=request.data["member"])
+        get_object_or_404(Student.objects, user=user.pk)
 
         request.data["group"] = group.pk
         request.data["member"] = user.pk
-        return super(ProjectTitleModelViewSet, self).create(request)  # type: ignore
+        return super(ProjectTitleModelViewSet, self).create(request)
 
     def update(self, request, group_pk=None, *args, **kwargs):
         response = self.check_membership(request, group_pk)
@@ -141,7 +143,7 @@ class MemberModelViewSet(ModelViewSet):
             return response
         group = Member.objects.get(id=group_pk)
         request.data["group"] = group.pk
-        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)  # type: ignore
+        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)
 
     def list(self, request, group_pk=None):
         queryset = Member.objects.filter(group=group_pk)
@@ -221,6 +223,52 @@ class ExaminerModelViewSet(ModelViewSet):
 
 class ProjectTitleModelViewSet(ModelViewSet):
 
+
+
+@api_view(['GET'])
+def similarity_check(request, pk):
+    title = get_object_or_404(ProjectTitle.objects, pk=pk)
+    
+    allProjects = ProjectTitle.objects.all()
+    filtered = []
+    for prj in allProjects:
+        if prj.id != title.id:
+            filtered.append({"id": prj.id, "description": prj.title_description})
+    payload = {
+        "project": {
+            "id": title.id,
+            "description": title.title_description,
+        },
+        "comparableProjects":filtered
+    }
+    response = requests.post(
+        "https://sfpm-check-similarity-backend.herokuapp.com/api/check-similarity",
+        data=json.dumps(payload),
+        headers={
+            'Content-Type':'application/json',
+            'Accept':'*/*',
+            'Accept-Encoding':'gzip, deflate, br',
+            'Connection':'keep-alive'
+        }
+    )
+    print("\n similarity \n")
+    checkedProjects =  response.json()
+    similarProjects = []
+    for pro in checkedProjects:
+        for fPrj in allProjects:
+            if fPrj.id == pro['id']:
+                proDict=model_to_dict(fPrj)
+                proDict['similarity']=pro['similarity']
+                similarProjects.append(proDict)
+    return Response({
+        'project_title':model_to_dict( title ),
+        'similarProjects':similarProjects,
+    })
+
+
+
+class ProjectTitleModelViewSet(ModelViewSet):
+
     permission_classes = (IsStudentOrReadOnly,)
     queryset = ProjectTitle.objects.all()
 
@@ -234,7 +282,7 @@ class ProjectTitleModelViewSet(ModelViewSet):
         if response != None:
             return response
 
-        group = Group.objects.get(id=group_pk)
+        group = get_object_or_404(Group.objects, pk=group_pk)
         title = None
         try:
             title = ProjectTitle.objects.get(group=group, no=request.data["no"])
@@ -272,11 +320,11 @@ class ProjectTitleModelViewSet(ModelViewSet):
         allProjects = ProjectTitle.objects.all()
         filtered = []
         for prj in allProjects:
-            if prj.id != newtitle.id:  # type: ignore
+            if prj.id != newtitle.id:
                 filtered.append({"id": prj.id, "description": prj.title_description})
         payload = {
             "project": {
-                "id": newtitle.id,  # type: ignore
+                "id": newtitle.id,
                 "description": newtitle.title_description,
             },
             "comparableProjects":filtered
@@ -310,7 +358,7 @@ class ProjectTitleModelViewSet(ModelViewSet):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
-        group = Group.objects.get(id=group_pk)
+        group = get_object_or_404(Group.objects, pk=group_pk)
         request.data["group"] = group
         return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)
 

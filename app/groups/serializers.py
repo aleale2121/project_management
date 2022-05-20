@@ -1,5 +1,7 @@
 import json
 from tokenize import group
+
+import requests
 from core.models import (
     Advisor,
     Batch,
@@ -218,9 +220,9 @@ class GroupSerializer(serializers.ModelSerializer):
         # u.set_password('password')
         # u.save()
         view = self.context.get("view")
-        group = Group.objects.get(id=view.kwargs["pk"])
-        batch = Batch.objects.get(name=group.batch)
-        if not batch.is_active:  # type: ignore
+        group = get_object_or_404(Group.objects, pk=view.kwargs["pk"])
+        batch = get_object_or_404(Batch.objects, pk=group.batch)
+        if not batch.is_active:
             raise serializers.ValidationError({"error": "inactive group"})
 
         members_data = validated_data.pop("group_members")

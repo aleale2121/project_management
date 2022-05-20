@@ -1,5 +1,5 @@
 from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
-from core.models import Title
+from core.models import ProjectTitle
 from django.db import transaction
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -17,21 +17,21 @@ class TitleViewSet(viewsets.ModelViewSet):
     filter_fields    = ["id"]
 
     def get_queryset(self):
-        titles = Title.objects.all().order_by("id")
+        titles = ProjectTitle.objects.all()
         return titles
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         print("creating ...")
         data = request.data
-        count = Title.objects.filter(name=data["name"]).count()
+        count = ProjectTitle.objects.filter(name=data["name"]).count()
         print("Count ", count)
         if count > 0:
             res = error_response(request, MODEL_ALREADY_EXIST, "Title")
             return Response(res, content_type="application/json")
         else:
             pass
-        new_title_obj = Title.objects.create(name=data["name"])
+        new_title_obj = ProjectTitle.objects.create(name=data["name"])
         serializer = TitleSerializer(new_title_obj)
         data = success_response(serializer.data)
         return Response((data))
@@ -42,7 +42,7 @@ class TitleViewSet(viewsets.ModelViewSet):
         pk = kwargs["pk"]
         if pk:
             pk = str(pk)
-        title = Title.objects.get(name=pk)
+        title = ProjectTitle.objects.get(name=pk)
         if data.get("name"):
             title.name = data["name"]
         else:
@@ -54,7 +54,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         print("deleting ...")
-        instance = Title.objects.filter(name=str(kwargs["pk"]))
+        instance = ProjectTitle.objects.filter(name=str(kwargs["pk"]))
         if len(instance) != 1:
             res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "Title")
             return Response(res, content_type="application/json")

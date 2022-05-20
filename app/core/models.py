@@ -126,7 +126,6 @@ class Examiner(models.Model):
     class Meta:
         unique_together = ["group", "examiner"]
 
-# SubmissionType models
 class SubmissionType(models.Model):
     class Meta:
         db_table = "submission_types"
@@ -146,7 +145,6 @@ class SubmissionDeadLine(models.Model):
         unique_together = ["name", "batch"]
         db_table = "submission_dead_lines"
 
-# StudentEvaluation model
 class StudentEvaluation(models.Model):
     class Meta:
         db_table = "student_evalaution"

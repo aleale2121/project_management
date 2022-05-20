@@ -1,6 +1,13 @@
+import email
+from distutils.file_util import write_file
+from django.forms import model_to_dict
+
+from django.shortcuts import get_object_or_404
+
 from core.models import Batch, Coordinator, Member, Staff, Student, User
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.base_user import BaseUserManager
+from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
@@ -169,6 +176,7 @@ class AdminRegistrationSerializer(serializers.ModelSerializer):
 
 class StaffRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for the staff registration"""
+
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
 
@@ -241,6 +249,35 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         tasks.publish_message(body)
         print("email sent")
         return student
+    def updateStudent(self, **kwargs):
+        my_view = self.context['view']
+        my_view.kwargs['partial'] = True
+        student_id = my_view.kwargs.get('pk')
+        student=get_object_or_404(Student, pk=student_id)
+        change_pass = self.context['request'].query_params.get('change_pass', None)
+        email = self.validated_data.pop("email", None)
+        username = self.validated_data.pop("username",None)
+        user=get_object_or_404(User,username=student.user.username)
+        if username:
+            user.username=username
+        if email:
+            user.email=email
+        user.save()
+        if change_pass==True:
+            password = BaseUserManager().make_random_password()
+            user.set_password(password)
+            from_email = "alefewyimer2@gmail.com"
+            send_mail(
+                "SiTE Project Repository Password",
+                password,
+                from_email,
+                [user.email],
+                fail_silently=False,
+            )
+        student = super().update(student, self.validated_data)
+        student.user=user
+        return student
+
 
 
 class CoordinatorSerialzer(serializers.ModelSerializer):

@@ -6,4 +6,3 @@ class SubmissionTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubmissionType
         fields = ["name","max_mark","semister"]
-76

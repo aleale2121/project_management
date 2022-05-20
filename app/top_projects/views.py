@@ -2,7 +2,7 @@ import json
 from urllib.request import proxy_bypass
 
 from constants.constants import FORBIDDEN_REQUEST_FOUND, MODEL_ALREADY_EXIST, MODEL_CREATION_FAILED, MODEL_RECORD_NOT_FOUND
-from core.models import  Batch, Group, TopProject,User,Title, Voter
+from core.models import  Batch, Group, ProjectTitle, TopProject,User,Title, Voter
 from django.db import transaction
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -71,7 +71,7 @@ class TopProjectViewSet(viewsets.ModelViewSet):
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Group")
             return Response(res, content_type="application/json")
         try:
-            title_obj = Title.objects.get(name=form_data["title"])
+            title_obj = ProjectTitle.objects.get(id=form_data["id"])
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Title")
             return Response(res, content_type="application/json")
@@ -89,7 +89,7 @@ class TopProjectViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=["PUT"],
-        # permission_classes=[IsAdmin],
+        permission_classes=[IsAdmin],
         url_path="vote",
     )
     def vote(self, request,*args, **kwargs):
@@ -129,7 +129,7 @@ class TopProjectViewSet(viewsets.ModelViewSet):
                 return Response({"message":"You Voted Successfully!"})
 
             else:
-                print("line-116")
+                print("line-132")
                 pass
         else:
             print("line-119")

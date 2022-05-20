@@ -1,31 +1,29 @@
 from constants.constants import MODEL_RECORD_NOT_FOUND, MODEL_UPDATE_FAILED
 from pkg.util import error_response
+import json
+from django.forms.models import model_to_dict
+import requests
 from core.models import (
     Advisor,
     Batch,
     Examiner,
+    ProjectTitle,
     Group,
     Member,
     Student,
     Title,
     User,
 )
-from core.permissions import (
-    HasGroup,
-    IsAdmin,
-    IsAdminOrReadOnly,
-    IsCoordinatorOrReadOnly,
-    IsReadOnly,
-    IsStaff,
-    IsStudent,
-    IsStudentOrReadOnly,
-)
+from core.permissions import IsCoordinatorOrReadOnly, IsStudentOrReadOnly
+from django.core import serializers as coreSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.db import transaction
 from rest_framework.decorators import action
+from core.permissions import IsAdmin, IsAdminOrReadOnly
+
 
 
 from groups.serializers import (
@@ -35,19 +33,18 @@ from groups.serializers import (
     ReadExaminerSerializer,
     ReadGroupSerializer,
     ReadMembersSerializer,
+    ReadProjectTitleFromMapSerializer,
+    ReadProjectTitleSerializer,
     WriteAdvisorSerialzer,
     WriteExaminerSerialzer,
+    WriteProjectTitleSerializer,
 )
 
 
 class GroupsModelViewSet(ModelViewSet):
     filterset_fields = ["batch", "group_name"]
     queryset = Group.objects.all()
-
-
-    # permission_classes = [
-    #     IsStudentOrReadOnly,
-    # ]
+    permission_classes = [IsStudentOrReadOnly,]
 
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
@@ -91,7 +88,6 @@ class GroupsModelViewSet(ModelViewSet):
             return Response({"error": "group doesnot exist"})
         try:
             member = Member.objects.get(group=group, member=request.user)
-            # return Response({"hello": "helopp"})
         except Member.DoesNotExist:
             return Response({"error": "your are not authorized to edit the group"})
     @action(
@@ -104,7 +100,7 @@ class GroupsModelViewSet(ModelViewSet):
         print("assign Title to groups",pk,batch)
         title_obj=None
         try:
-              title_obj=Title.objects.get(id=request.data['title'])
+              title_obj=ProjectTitle.objects.get(id=request.data['title'])
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Title")
             return Response(res, content_type="application/json")
@@ -119,7 +115,7 @@ class GroupsModelViewSet(ModelViewSet):
         return Response(serializer.data)
 
 class MemberModelViewSet(ModelViewSet):
-    # permission_classes = (IsStudentOrReadOnly,)
+    permission_classes = (IsStudentOrReadOnly,)
     queryset = Member.objects.all()
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
@@ -130,21 +126,22 @@ class MemberModelViewSet(ModelViewSet):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
-        group = get_object_or_404(Group.objects, pk=group_pk)
-        user = get_object_or_404(User.objects, username=request.data["member"])
-        member = get_object_or_404(Student.objects, pk=user.pk)
+
+        group = Group.objects.get(id=group_pk)
+        user = User.objects.get(username=request.data["member"])
+        Student.objects.get(user=user.pk)
 
         request.data["group"] = group.pk
-        request.data["member"] = member.pk
-        return super(MemberModelViewSet, self).create(request)
+        request.data["member"] = user.pk
+        return super(ProjectTitleModelViewSet, self).create(request)  # type: ignore
 
     def update(self, request, group_pk=None, *args, **kwargs):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
-        group = get_object_or_404(Member.objects, pk=group_pk)
+        group = Member.objects.get(id=group_pk)
         request.data["group"] = group.pk
-        return super(MemberModelViewSet, self).update(request, *args, **kwargs)
+        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)  # type: ignore
 
     def list(self, request, group_pk=None):
         queryset = Member.objects.filter(group=group_pk)
@@ -181,13 +178,12 @@ class MemberModelViewSet(ModelViewSet):
 
         try:
             member = Member.objects.get(group=group, member=request.user)
-            # return Response({"hello": "helopp"})
         except Member.DoesNotExist:
             return Response({"error": "your are not authorized to edit or view the group"})
 
 
 class AdvisorModelViewSet(ModelViewSet):
-    # permission_classes = [IsCoordinatorOrReadOnly]
+    permission_classes = [IsCoordinatorOrReadOnly]
     queryset = Advisor.objects.all()
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
@@ -205,7 +201,7 @@ class AdvisorModelViewSet(ModelViewSet):
 
 
 class ExaminerModelViewSet(ModelViewSet):
-    # permission_classes = [IsCoordinatorOrReadOnly]
+    permission_classes = [IsCoordinatorOrReadOnly]
     def get_queryset(self):
         return Examiner.objects.all()
 
@@ -223,10 +219,135 @@ class ExaminerModelViewSet(ModelViewSet):
     def perform_destroy(self, instance):
         instance.delete()
 
+class ProjectTitleModelViewSet(ModelViewSet):
 
-# class ProjectTitleViewSet(ModelViewSet):
-#     # permission_classes = [IsStudent, IsReadOnly]
-#     serializer_class = ProjectTitleSerializer
-#     def get_queryset(self):
-#         projecttitles = ProjectTitle.objects.all()
-#         return projecttitles
+    permission_classes = (IsStudentOrReadOnly,)
+    queryset = ProjectTitle.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return ReadProjectTitleSerializer
+        return WriteProjectTitleSerializer
+
+    def create(self, request, group_pk=None):
+        response = self.check_membership(request, group_pk)
+        if response != None:
+            return response
+
+        group = Group.objects.get(id=group_pk)
+        title = None
+        try:
+            title = ProjectTitle.objects.get(group=group, no=request.data["no"])
+            if title != None:
+                return Response(
+                    {
+                        "error": "project title " + str(request.data["no"]) +
+                        " already submitted",
+                    }
+                )
+        except KeyError:
+            return Response(
+                {
+                    "error": "no field is required",
+                }
+            )
+        except ProjectTitle.DoesNotExist:
+            pass
+        request.data["group"] = group
+        response= super(ProjectTitleModelViewSet, self).create(request)
+        print("new title \n")
+        data=response.data
+        # serializer=ReadProjectTitleFromMapSerializer(response.data)
+        newtitle= ProjectTitle(
+            id=data['id'],
+            title_name=data['title_name'],
+            no=data['no'],  
+            title_description=data['title_description'], 
+            status=data['status'], 
+            rejection_reason=data['rejection_reason'], 
+        )
+        print(newtitle)
+        print("new title \n")
+
+        allProjects = ProjectTitle.objects.all()
+        filtered = []
+        for prj in allProjects:
+            if prj.id != newtitle.id:  # type: ignore
+                filtered.append({"id": prj.id, "description": prj.title_description})
+        payload = {
+            "project": {
+                "id": newtitle.id,  # type: ignore
+                "description": newtitle.title_description,
+            },
+            "comparableProjects":filtered
+        }
+        response = requests.post(
+            "https://sfpm-check-similarity-backend.herokuapp.com/api/check-similarity",
+            data=json.dumps(payload),
+            headers={
+                'Content-Type':'application/json',
+                'Accept':'*/*',
+                'Accept-Encoding':'gzip, deflate, br',
+                'Connection':'keep-alive'
+            }
+        )
+        print("\n similarity \n")
+        checkedProjects =  response.json()
+        similarProjects = []
+        for pro in checkedProjects:
+            for fPrj in allProjects:
+                if fPrj.id == pro['id']:
+                    proDict=model_to_dict(fPrj)
+                    proDict['similarity']=pro['similarity']
+                    similarProjects.append(proDict)
+        return Response({
+            'project_title':model_to_dict( newtitle ),
+            'similarProjects':similarProjects,
+        })
+
+
+    def update(self, request, group_pk=None, *args, **kwargs):
+        response = self.check_membership(request, group_pk)
+        if response != None:
+            return response
+        group = Group.objects.get(id=group_pk)
+        request.data["group"] = group
+        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)
+
+    def list(self, request, group_pk=None):
+
+        queryset = ProjectTitle.objects.filter(group=group_pk)
+        serializer = ReadProjectTitleSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None, group_pk=None):
+
+        queryset = ProjectTitle.objects.filter(pk=pk, group=group_pk)
+        group = get_object_or_404(queryset, pk=pk)
+        serializer = ReadProjectTitleSerializer(group)
+        return Response(serializer.data)
+
+    def destroy(self, request, pk=None, group_pk=None):
+        response = self.check_membership(request, group_pk)
+        if response != None:
+            return response
+        member = get_object_or_404(self.queryset, pk=pk, group__pk=group_pk)
+        self.perform_destroy(member)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def check_membership(self, request, id):
+        try:
+            Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response({"error": "you are not student"})
+
+        group = None
+        try:
+            group = Group.objects.get(id=id)
+        except Group.DoesNotExist:
+            return Response({"error": "group doesnot exist"})
+
+        try:
+            Member.objects.get(group=group, member=request.user)
+        except Member.DoesNotExist:
+            return Response({"error": "your are not authorized to edit or view the group"})

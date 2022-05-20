@@ -2,8 +2,6 @@ from os import defpath
 
 from core.models import TopProject, Voter
 from rest_framework import serializers
-
-
 class TopProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = TopProject
@@ -15,6 +13,5 @@ class VoterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voter
         ordering = ['id']
-
-        fields = ["user_id","project_id"]
+        fields = ['id',"user_id","project_id"]
         depth = 1

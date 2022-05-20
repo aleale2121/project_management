@@ -1,3 +1,4 @@
+from readline import get_completion_type
 from django.apps import AppConfig
 
 

@@ -1,21 +1,29 @@
+import json
 import csv
 from constants.constants import MODEL_CREATION_FAILED, MODEL_DELETE_FAILED, MODEL_RECORD_NOT_FOUND, MODEL_UPDATE_FAILED
 from  pkg.util import error_response
 from core.models import Batch, Coordinator, Staff, Student, User
 from core.permissions import IsAdmin, IsAdminOrReadOnly
-from django.db import transaction
+from django.core.files.base import ContentFile
+from django.core.files.storage import FileSystemStorage
+from core.models import Batch, Coordinator, Group, Member, Staff, Student, User
+from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
-from .tasks import send_email_task,send_email_for_student
+from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
+from django.utils.datastructures import MultiValueDictKeyError
+from groups.serializers import ReadGroupSerializer
 from rest_framework import authentication, generics, permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import APIView, ObtainAuthToken
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
+from users import tasks
+
 
 from users.serializers import (
     AdminRegistrationSerializer,
@@ -35,7 +43,6 @@ fs = FileSystemStorage(location="tmp/")
 
 
 class BatchModelViewSet(ModelViewSet):
-
     permission_classes = (IsAdminOrReadOnly,)
     queryset = Batch.objects.all()
     serializer_class = BatchSerializer
@@ -44,7 +51,6 @@ class BatchModelViewSet(ModelViewSet):
 
 class CreateTokenView(ObtainAuthToken):
     """Create a new token for user"""
-
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -67,6 +73,28 @@ class CreateTokenView(ObtainAuthToken):
         if coordinator_history != None:
             is_coordinator = True
 
+        joinedGroup = None
+        try:
+            member = Member.objects.get(member=user)
+            group = ReadGroupSerializer(member.group)
+            if group != None:
+                joinedGroup = group.data
+        except Member.DoesNotExist:
+            pass
+        advisor_to = []
+        examiner_to = []
+        if active_batch != None:
+            try:
+                advisor_to = ReadGroupSerializer(
+                    Group.objects.filter(batch=active_batch).filter(advisors__advisor__exact=user), many=True
+                )
+                examiner_to = ReadGroupSerializer(
+                    Group.objects.filter(batch=active_batch).filter(examiners__examiner__exact=user), many=True
+                )
+
+            except Batch.DoesNotExist:
+                pass
+
         return Response(
             {
                 "token": token.key,
@@ -75,6 +103,9 @@ class CreateTokenView(ObtainAuthToken):
                 "is_staff": user.is_staff,
                 "is_coordinator": is_coordinator,
                 "is_student": user.is_student,
+                "group": joinedGroup,
+                "advisor_to": advisor_to,  
+                "examiner_to": examiner_to,
             }
         )
 
@@ -84,7 +115,6 @@ class CreateTokenView(ObtainAuthToken):
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
     """Manage the authenticated user"""
-
     serializer_class = UserSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -93,10 +123,68 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
+class UserViewSet(ModelViewSet):
+    """Manage the authenticated user"""
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (permissions.IsAdminUser,)
+
+
 class LogoutView(APIView):
     def post(self, request, format=None):
         request.auth.delete()
         return Response(status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes((IsStaff,))
+def advisor_groups_view(request, format=None):
+    user = request.user
+    active_batch = None
+    try:
+        active_batch = Batch.objects.get(is_active=True)
+    except Batch.DoesNotExist:
+        pass
+
+    advisor_to = []
+    examiner_to = []
+    if active_batch != None:
+        try:
+            advisor_to = ReadGroupSerializer(
+                Group.objects.filter(batch=active_batch).filter(advisors__advisor__exact=user),
+                many=True,
+            )
+            examiner_to = ReadGroupSerializer(
+                Group.objects.filter(batch=active_batch).filter(examiners__examiner__exact=user),
+                many=True,
+            )
+
+        except Batch.DoesNotExist:
+            pass
+    return Response(((advisor_to.data)))  # type: ignore
+
+
+@api_view(["GET"])
+@permission_classes((IsStaff,))
+def examiner_groups_view(request, format=None):
+    user = request.user
+    active_batch = None
+    try:
+        active_batch = Batch.objects.get(is_active=True)
+    except Batch.DoesNotExist:
+        pass
+
+    examiner_to = []
+    if active_batch != None:
+        try:
+            examiner_to = ReadGroupSerializer(
+                Group.objects.filter(batch=active_batch).filter(examiners__examiner__exact=user),
+                many=True,
+            )
+
+        except Batch.DoesNotExist:
+            pass
+    return Response(((examiner_to)))
 
 
 class AdminViewSet(ModelViewSet):
@@ -130,18 +218,13 @@ class StaffViewSet(ModelViewSet):
         serializer = StaffRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         staff = serializer.save()
-        staff_serialize = StaffSerializer(staff)
+        staff_serialize = StaffSerializerTwo(staff)
         data = staff_serialize.data
 
-        return Response(
-            {
-                "user_info": data,
-                "message": "account created successfully",
-            }
-        )
+        return Response(data)
 
 
-class StudentViewSet(viewsets.ModelViewSet):
+class StudentViewSet(ModelViewSet):
 
     filterset_fields = [
         "batch",
@@ -156,7 +239,6 @@ class StudentViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAdmin],
         url_path="(?P<batch>[^/.]+)",
     )
-    
     def registration(self, request, batch):
         """Register Students from CSV"""
         batch = get_object_or_404(Batch, pk=batch)
@@ -213,22 +295,22 @@ class StudentViewSet(viewsets.ModelViewSet):
         # email_res = send_mass_mail((email_tuple), fail_silently=False)
         try:
             Student.objects.bulk_create(student_list)
-            res=send_email_task.delay(email_tuple)
-            if res == None:
-                return Response({"message":"Students registered  successfully"})
-            else:
-                return Response({"message:":"Error while emailing"})
-
+            message={
+                "type":"bulk",
+                "data":email_tuple
+            }
+            tasks.publish_message(message)
+            return Response({"message":"Students registered  successfully"})
         except Exception as e:
-            if e:
-                print("error while creating new  stuents ",e)
-                return Response({ "Error Has Occured"})
+            print("error while sending message ",e)
+            return Response({ "message":"Error Has Occured while registering students!"})
 
     def create(self, request, *args, **kwargs):
+        print("***create student***")
         serializer = StudentRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         student = serializer.save()
-        student_serialize = StudentSerializer(student)
+        student_serialize = StudentSerializerTwo(student)
         data = student_serialize.data
 
         return Response(
@@ -247,9 +329,9 @@ class StudentViewSet(viewsets.ModelViewSet):
         form_data=request.data
         student_id=form_data["user_id"]
         password = BaseUserManager().make_random_password()
+        batch_obj=None
         student_obj=None
         if User.objects.get(id=student_id).exists() and not Student.objects.get(user=User.objects.get(id=student_id)):
-            batch_obj=None
             try:
                 batch_obj = Batch.objects.get(name=form_data["batch"])
             except:
@@ -268,14 +350,18 @@ class StudentViewSet(viewsets.ModelViewSet):
                 first_name=form_data["first_name"],
                 last_name=form_data["first_name"]
             )
-                
-            send_email_for_student.delay(subject,message,fromMail,toArr)
+            email={}
+            email["subject"]=subject
+            email["body"]=message
+            email["from"]=fromMail
+            email["to"]=toArr
+            body={"type":"single","data":email}            
+            tasks.publish_message(body)
             serializer = StudentSerializer(student_obj)
             return Response(serializer.data)
         except Exception as e:
-            if e:
-                print("error while sending message ",e)
-                return Response({ "Error Has Occured while adding students!"})
+            print("error while sending message ",e)
+            return Response({ "message":"Error has occured while adding students!"})
             
     @action(
         detail=True,
@@ -285,7 +371,8 @@ class StudentViewSet(viewsets.ModelViewSet):
     )
     def drop_student(self,request,pk=None):
         if Student.objects.get(id=pk).exists():
-            student_obj=Student.objects.get(id=pk).delete()
+            student_obj=Student.objects.get(id=pk)
+            student_obj.delete()
             return Response({"message":f"Student with id {student_obj.user} successfuly deleted!" })
         else:
             res = error_response(request, MODEL_DELETE_FAILED, "Student")
@@ -299,23 +386,28 @@ class StudentViewSet(viewsets.ModelViewSet):
     )
     def rest_email(self,request):
         form_data=request.data
-        password = User.objects.make_random_password()
+        password = User.objects.make_random_password()  # type: ignore
 
         if User.objects.get(username=form_data["username"]).exists():
             user_obj=User.objects.filter(username=form_data["username"])
-            user_obj.email=form_data['email']
-            user_obj.set_password(password)
-            user_obj.save(update_fields=['password'])
-            body=password +" is your new password."
-            from_email ="alefewyimer2@gmail.com"
+            user_obj.email=form_data['email']  # type: ignore
+            user_obj.set_password(password)  # type: ignore
+            user_obj.save(update_fields=['password'])  # type: ignore
+            email={}
+            email=body=password +" is your new password."
+            from_email ="yidegaait2010@gmail.com"
             to_email=form_data['email']
             subject='Email and Passsword Reset'
             toArr=[to_email]
-            send_email_for_student.delay(subject,body,from_email,toArr)
-            if res == None:
-                return Response({"message":f"Student with username {form_data['username']} successfuly updated!" })
-            else:
-                return Response({"message":"email not sent to "+form_data['first_name']+" "+form_data['last_name']})
+            email={}
+            email["subject"]=subject
+            email["body"]=body
+            email["from"]=from_email
+            email["to"]=toArr
+            message={"type":"single","data":email}            
+            tasks.publish_message(message)
+            return Response({"message":f"Student with username {form_data['username']} successfuly updated!" })
+   
         else:
             res = error_response(request, MODEL_UPDATE_FAILED, "Student")
             return Response(res, content_type="application/json")

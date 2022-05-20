@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY_DEFAULT = "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*%tu7wd6t90b8"
+SECRET_KEY_DEFAULT = "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*u7wd6t90b8"
 SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -30,13 +30,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # 'whitenoise.runserver_nostatic'
     "rest_framework",
     "corsheaders",
+    'django_celery_results',
     "rest_framework.authtoken",
     'django_filters',
     "core",
     "users",
+    "chatrooms",
+    "channels",
+    "drf_yasg",
     "groups",
     "evaluations",
     "titles",
@@ -44,6 +47,7 @@ INSTALLED_APPS = [
     "submission_types",
     "submission_dead_lines",
     "top_projects",
+
 ]
 
 MIDDLEWARE = [
@@ -77,6 +81,27 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "app.wsgi.application"
+ASGI_APPLICATION = "app.routing.application"
+CHANNEL_LAYERS = {
+	'default': {
+		'BACKEND': 'channels_redis.core.RedisChannelLayer',
+		'CONFIG': {
+			"hosts": ['redis://redis:6379/0'],
+		},
+	},
+}
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+       'LOCATION': 'redis://redis:6379',
+    }
+}
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer"
+#     }
+# }
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
@@ -88,26 +113,9 @@ DATABASES = {
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "PASSWORD": os.environ.get("DB_PASS"),
+        'ATOMIC_REQUESTS': True,
     }
 }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': os.environ.get('DATABASE_NAME'),
-#         'USER': os.environ.get('DATABASE_USER'),
-#         'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
-#         'HOST': os.environ.get('DATABASE_HOST'),
-#         'PORT': os.environ.get('DATABASE_PORT'),
-#     }
-# }
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
-#         "TEST": {"NAME": os.environ.get("TEST_DATABASE")},
-#     }
-# }
-# Heroku: Update database configuration from $DATABASE_URL.
 
 db_from_env = dj_database_url.config(engine="django.db.backends.postgresql_psycopg2", conn_max_age=600)
 DATABASES["default"].update(db_from_env)
@@ -146,9 +154,7 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 STATIC_ROOT = '/vol/web/static'
 MEDIA_ROOT = '/vol/web/media'
-
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = ["http://localhost:3000", "https://sfpm.herokuapp.com"]
@@ -170,52 +176,22 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     "PAGE_SIZE": 100,
 }
-
-
-
-
-# RabbitMQ Configuration
-RABBIT_HOST = "localhost"
-RABBIT_PORT = "5672"
-RABBIT_VIRTUAL_HOST = "/"
-RABBITMQ_ROUTING_KEY = "email_consumer"
-# RabbitMQ Credentials
-RABBIT_USERNAME = "guest"
-RABBIT_PASSWORD = "guest"
 DJANGO_SETTINGS_MODULE= 'app.settings'
-
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_SSL=False
+EMAIL_USE_SSL=True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'yidegaait2010@gmail.com'
 EMAIL_HOST_PASSWORD = 'wdivhgmrvjpqqieo' #past the key or password app here
 EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_USE_TLS = False
 DEFAULT_FROM_EMAIL = 'yidegaait2010@gmail.com'
-CELERY_BROKER_URL = 'amqp://rabbitmq'
-BROKER_URL = 'amqp://rabbitmq'
-CELERY_ENABLED = True
-FLOWER_PORT= 5566
-CELERY_DEFAULT_EXCHANGE_TYPE: 'fanot'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_ACKS_LATE = True
-CELERYD_PREFETCH_MULTIPLIER = 1
+# Celery properties
+CELERY_BROKER_URL = 'amqp://admin:admin@rabbit:5672//'
+CELERY_RESULT_BACKEND = 'django-db'
+# REDIS_URL='redis://redis:6379/0'
 
-
-# ADD CELERY BYPASS LOG
-CELERYD_HIJACK_ROOT_LOGGER = False
-
-# CREATE QUEUE TO RABBITMQ
-EXCHANGES = {
-    # a reference name for this config, used when attaching handlers
-    'default': {
-        'name': 'data',  # actual name of exchange in RabbitMQ
-        'type': 'mail_consumer',  # an AMQP exchange type
-    },
-}
 
 AUTH_USER_MODEL = "core.User"
 ACCOUNT_UNIQUE_EMAIL = True
+APPEND_SLASH = False
 

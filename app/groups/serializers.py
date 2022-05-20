@@ -1,6 +1,5 @@
-import os
-import uuid
-
+import json
+from tokenize import group
 from core.models import (
     Advisor,
     Batch,
@@ -8,21 +7,16 @@ from core.models import (
     Group,
     Member,
     ProjectTitle,
-    Staff,
     Student,
     User,
 )
+from django.core import serializers as djSerializer
 from django.db import IntegrityError
+from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.serializers import SerializerMethodField
-from users.serializers import (
-    StaffSerializerThree,
-    StaffSerializerTwo,
-    StudentSerializer,
-    StudentSerializerTwo,
-    UserSerializer,
-)
+from users.serializers import UserSerializer
 
 
 class MemberSerializer(serializers.ModelSerializer):
@@ -155,7 +149,7 @@ class GroupSerializer(serializers.ModelSerializer):
             for group_member in group_members_list:
                 for g_member in g_members:
                     print(g_member)
-                    if MemberSerializer(group_member).data["member"]== g_member:
+                    if MemberSerializer(group_member).data["member"] == g_member:
                         response = ""
                         if g_member == current_user.username:
                             response = "You have already joined " + current_batch_group.group_name
@@ -213,6 +207,58 @@ class GroupSerializer(serializers.ModelSerializer):
             member_objects.append(Member(group=group, member=student))
 
         Member.objects.bulk_create(member_objects)
+        return group
+
+    def update(self, instance, validated_data):
+        current_user = self.context["request"].user
+        # u = User.objects.get(username='username31')
+        # print("---")
+        # print(u)
+        # print("---")
+        # u.set_password('password')
+        # u.save()
+        view = self.context.get("view")
+        group = Group.objects.get(id=view.kwargs["pk"])
+        batch = Batch.objects.get(name=group.batch)
+        if not batch.is_active:  # type: ignore
+            raise serializers.ValidationError({"error": "inactive group"})
+
+        members_data = validated_data.pop("group_members")
+        student_list = []
+        for member_data in members_data:
+            user = None
+            try:
+                user = User.objects.get(username=member_data)
+                try:
+                    student = Student.objects.get(user=user, batch=group.batch)
+                    student_list.append(user)
+                    try:
+                        member = Member.objects.get(member=user)
+                        if member.group.pk != group.pk:
+                            response = "student with username " + member_data + " Joined another group"
+                            raise serializers.ValidationError({"error": response})
+                    except Member.DoesNotExist:
+                        print("hello")
+                except Student.DoesNotExist:
+                    response = "student with username " + member_data + " is not registered for acadamic year"
+                    raise serializers.ValidationError({"error": response})
+
+            except User.DoesNotExist:
+                response = "student with username " + member_data + " not found"
+                raise serializers.ValidationError({"error": response})
+        try:
+            if group.group_name != self.validated_data["group_name"]:
+                group.group_name = self.validated_data["group_name"]
+                group.save()
+        except IntegrityError as error:
+            raise serializers.ValidationError({"error": "group name already exists"})
+
+        Member.objects.filter(group=group).delete()
+        member_objects = []
+        for student in student_list:
+            member_objects.append(Member(group=group, member=student))
+        Member.objects.bulk_create(member_objects)
+        Member.objects.get_or_create(group=group, member=student_list[len(student_list) - 1])
         return group
 
 
@@ -282,9 +328,7 @@ class WriteExaminerSerialzer(serializers.ModelSerializer):
 
     class Meta:
         model = Examiner
-
         fields = ("group", "examiner")
-
     def validate(self, data):
         username = data.get("examiner")
         try:
@@ -315,36 +359,111 @@ class ReadExaminerSerializer(serializers.ModelSerializer):
         return obj.examiner.email
 
 
-class ProjectTitleSerializer(serializers.ModelSerializer):
+class WriteProjectTitleSerializer(serializers.ModelSerializer):
+    title_name = serializers.CharField(max_length=200)
+    title_description = serializers.CharField(min_length=5)
+    no = serializers.ChoiceField(choices=ProjectTitle.NO_CHOICES)
+
     class Meta:
         model = ProjectTitle
-        fields = ["group", "title", "doc_path", "description", "is_approved"]
-        read_only_fields = ("group", "doc_path")
+        fields = [
+            "id",
+            "title_name",
+            "title_description",
+            "no",
+            "group",
+            "rejection_reason",
+            "status",
+        ]
+        read_only_fields = ("id", "group", "rejection_reason", "status")
+        extra_kwargs = {
+            "title_name": {"required": True},
+            "title_description": {"required": True},
+            "no": {"required": True},
+        }
         depth = 1
 
     def create(self, request, *args, **kwargs):
-        user = self.context["request"].user
-        member_student = None
-        try:
-            member_student = Member.objects.get(member=user.username)
-        except Member.DoesNotExist:
-            response_message = "you haven't joined or created any group"
-            raise serializers.ValidationError(response_message)
-        project_title_data = request.data
-
-        name = f"{uuid.uuid4()}.txt"
-        filename = os.path.join("uploads/titles/", name)
-        text_file = open(filename, "w")
-        text_file.write(
-            project_title_data["description"],
-        )
-
+        view = self.context.get("view")
         new_title = ProjectTitle.objects.create(
-            group=member_student.group,
-            title=project_title_data["title"],
-            description=project_title_data["description"],
-            doc_path=filename,
+            group=self.context["request"].data["group"],
+            title_name=self.validated_data["title_name"],
+            title_description=self.validated_data["title_description"],
+            rejection_reason="",
+            no=self.validated_data["no"],
+            status=ProjectTitle.STATUS_CHOICES.PENDING,
         )
-        new_title = new_title.save()
-
         return new_title
+
+
+class ReadProjectTitleSerializer(serializers.ModelSerializer):
+    no = SerializerMethodField()
+    title_name = SerializerMethodField()
+    title_description = SerializerMethodField()
+    status = SerializerMethodField()
+    rejection_reason = SerializerMethodField()
+
+    class Meta:
+        model = ProjectTitle
+        fields = ("id", "no", "title_name", "title_description", "status", "rejection_reason")
+
+    def validate(self, data):
+        return super().validate(data)
+
+    def get_no(self, obj):
+        return obj.no
+
+    def get_title_name(self, obj):
+
+        return obj.title_name
+
+    def get_title_description(self, obj):
+        return obj.title_description
+
+    def get_status(self, obj):
+        return obj.status
+
+    def get_rejection_reason(self, obj):
+        return obj.rejection_reason
+
+
+class ReadProjectTitleFromMapSerializer(serializers.ModelSerializer):
+    no = SerializerMethodField()
+    title_name = SerializerMethodField()
+    title_description = SerializerMethodField()
+    status = SerializerMethodField()
+    rejection_reason = SerializerMethodField()
+    group = ReadGroupSerializer()
+
+    class Meta:
+        model = ProjectTitle
+        fields = (
+            "id",
+            "no",
+            "title_name",
+            "title_description",
+            "status",
+            "rejection_reason",
+            "group",
+        )
+    def id(self, obj):
+        return obj['no']
+
+    def validate(self, data):
+        return super().validate(data)
+
+    def get_no(self, obj):
+        return obj['no']
+
+    def get_title_name(self, obj):
+
+        return obj['title_name']
+
+    def get_title_description(self, obj):
+        return obj['title_description']
+
+    def get_status(self, obj):
+        return obj['status']
+
+    def get_rejection_reason(self, obj):
+        return obj['rejection_reason']

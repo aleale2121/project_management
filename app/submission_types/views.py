@@ -7,9 +7,7 @@ from pkg.util import error_response, success_response
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
-
 from .serializer import SubmissionTypeSerializer
-
 
 class SubmissionTypeViewSet(viewsets.ModelViewSet):
     serializer_class = SubmissionTypeSerializer
@@ -45,13 +43,11 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
         if pk:
             pk = str(pk)
         sub__type = SubmissionType.objects.get(name=pk)
-        print("===>",data["max_mark"])
         if data.get("max_mark"):
             sub__type.max_mark = data["max_mark"]
         else:
             pass
         sub__type.save()
-        print("updated.")
         serializer = SubmissionTypeSerializer(sub__type)
         return Response(serializer.data)
 

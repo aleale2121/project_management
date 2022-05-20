@@ -1,5 +1,9 @@
 from django.conf import settings
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -89,14 +93,12 @@ class Coordinator(models.Model):
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="coordinators")
 
     class Meta:
-        unique_together = ["batch"]
+        unique_together = ["user","batch"]
 
 
 class Group(models.Model):
     group_name = models.CharField(max_length=25)
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="groups")
-    title = models.ForeignKey(Title,null=True, on_delete=models.CASCADE, related_name="title")
-
     class Meta:
         unique_together = ["group_name", "batch"]
 
@@ -136,7 +138,6 @@ class SubmissionType(models.Model):
     updated_at = models.DateTimeField(default=now, editable=True)
 
 
-# SubmissionDeadLine model
 class SubmissionDeadLine(models.Model):
     name = models.ForeignKey(SubmissionType, on_delete=models.CASCADE, related_name="submission_type_deadline")
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="submission_deadline_batch")
@@ -159,9 +160,33 @@ class StudentEvaluation(models.Model):
     created_at = models.DateTimeField(default=now, editable=True)
     updated_at = models.DateTimeField(default=now, editable=True)
 
-#TopProject models
+
+class ProjectTitle(models.Model):
+    class STATUS_CHOICES(models.TextChoices):
+        APPROVED = "APPROVED"
+        PENDING = "PENDING"
+        REJECTED = "REJECTED"
+
+    class NO_CHOICES(models.IntegerChoices):
+        ONE = 1
+        TWO = 2
+        THREE = 3
+
+    class Meta:
+        # db_table = "project_title"
+        unique_together = ["group","no"]
+
+    title_name = models.CharField(max_length=200)
+    title_description = models.TextField()
+    no = models.IntegerField(choices=NO_CHOICES.choices)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="project_titles")
+    rejection_reason = models.CharField(max_length=1000, default=None)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES.choices)
+
+
+# TopProject model
 class TopProject(models.Model):
-    title    = models.ForeignKey(Title, related_name="project_title", on_delete=models.CASCADE)
+    title    = models.ForeignKey(ProjectTitle, related_name="project_title", on_delete=models.CASCADE)
     batch    = models.ForeignKey(Batch,null=True, related_name="project_batch", on_delete=models.CASCADE)
     group    = models.ForeignKey(Group, related_name="project_group", on_delete=models.CASCADE)
     doc_path = models.CharField(max_length=500, blank=True)
@@ -180,4 +205,4 @@ class Voter(models.Model):
         unique_together = ["user_id",]
 
     user_id = models.ForeignKey(User, related_name="voters", on_delete=models.CASCADE)
-    project_id = models.ForeignKey(TopProject, related_name="projects", on_delete=models.CASCADE)
+    project_id = models.ForeignKey(ProjectTitle, related_name="projects", on_delete=models.CASCADE)

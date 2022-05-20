@@ -123,8 +123,6 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-/site
-
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -141,20 +139,15 @@ dmypy.json
 
 # ignore staticfiles for whitenoise
 staticfiles/
-tmp/
-
 # ignore virtual environment
 env/
 #temp
-tmp/
+
 
 Makefile
 docker-compose.yml
 venv/
-myvenv/bin
-myvenv/bin/pip3.*
-myvenv/bin/*
-**/bin/*
 2014.csv
 2013.csv
 tmp/
+myvenv/

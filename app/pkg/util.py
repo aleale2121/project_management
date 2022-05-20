@@ -9,7 +9,6 @@ def error_response(request, code=400, model_info="Model"):
         "detail": ErrorDetail[code],
         "path": request.path,
     }
-
     return res
 
 

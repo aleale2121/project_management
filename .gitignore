@@ -145,7 +145,6 @@ env/
 
 
 Makefile
-docker-compose.yml
 venv/
 2014.csv
 2013.csv

@@ -30,7 +30,6 @@ urlpatterns = [
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path("api/", include("submission_types.urls")),
     path("api/", include("top_projects.urls")),
-    path('chat/', include('chatrooms.urls')),
 
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # type: ignore
 

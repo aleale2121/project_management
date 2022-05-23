@@ -221,10 +221,6 @@ class ExaminerModelViewSet(ModelViewSet):
     def perform_destroy(self, instance):
         instance.delete()
 
-class ProjectTitleModelViewSet(ModelViewSet):
-
-
-
 @api_view(['GET'])
 def similarity_check(request, pk):
     title = get_object_or_404(ProjectTitle.objects, pk=pk)

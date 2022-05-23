@@ -7,14 +7,13 @@ from core.permissions import IsAdmin, IsAdminOrReadOnly
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from core.models import Batch, Coordinator, Group, Member, Staff, Student, User
-
 from core.models import Advisor, Batch, Coordinator, Group, Member, Staff, Student, User
 from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.forms.models import model_to_dict
-from django.core.mail import send_mass_mail
+from django.core.mail import send_mass_mail,send_mail
 from django.shortcuts import get_object_or_404
 from django.utils.datastructures import MultiValueDictKeyError
 from groups.serializers import ReadGroupSerializer
@@ -25,7 +24,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
-from users import tasks
+# from users import tasks
 
 
 from users.serializers import (
@@ -304,9 +303,7 @@ class StudentRegistrationModelViewSet(ModelViewSet):
         email_res = send_mass_mail((email_tuple), fail_silently=False)
         Student.objects.bulk_create(student_list)
         return Response("Students registered  successfully")
-
 class StudentModelViewSet(ModelViewSet):
-    
     filterset_fields = [
         "batch",
     ]
@@ -336,7 +333,7 @@ class StudentModelViewSet(ModelViewSet):
         csv_file = open(tmp_file, errors="ignore")
         reader = csv.reader(csv_file)
         next(reader)
-    
+
         student_list = []
         ctx_list = []
         for id_, row in enumerate(reader):
@@ -356,39 +353,30 @@ class StudentModelViewSet(ModelViewSet):
                     last_name=lastname,
                 )
             )
-
-            msg = password+" is your password for site repository management application,don't share it for any one else!"
+            msg = "Your SiTE Project Repository password is " + password
             ctx_list.append(
                 {
                     "username": username,
                     "first_name": firstname,
                     "last_name": lastname,
                     "email": email,
-                    "subject": "Dear "+firstname+" "+lastname,
+                    "subject": "SiTE Project Repository Password",
                     "msg": msg,
                 }
             )
 
-        from_email = "yidegaait2010@gmail.com"
+        from_email = "alefewyimer2@gmail.com"
         email_tuple = tuple()
+
         for i in ctx_list:
             email_tuple = email_tuple + ((i["subject"], i["msg"], from_email, [i["email"]]),)
+
         fs.delete(tmp_file)
-        # email_res = send_mass_mail((email_tuple), fail_silently=False)
-        try:
-            Student.objects.bulk_create(student_list)
-            message={
-                "type":"bulk",
-                "data":email_tuple
-            }
-            tasks.publish_message(message)
-            return Response({"message":"Students registered  successfully"})
-        except Exception as e:
-            print("error while sending message ",e)
-            return Response({ "message":"Error Has Occured while registering students!"})
+        email_res = send_mass_mail((email_tuple), fail_silently=False)
+        Student.objects.bulk_create(student_list)
+        return Response("Students registered  successfully")
 
     def create(self, request, *args, **kwargs):
-        print("***create student***")
         serializer = StudentRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         student = serializer.save()
@@ -404,6 +392,54 @@ class StudentModelViewSet(ModelViewSet):
             data=request.data,
             context={"request": request, "view": self},
         )
+        serializer.is_valid(raise_exception=True)
+        get_object_or_404(Batch, name=request.data["batch"])
+        student = serializer.updateStudent()
+        student_serialize = StudentSerializerTwo(student)
+        data = student_serialize.data
+        return Response(data)
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return StudentSerializerTwo
+        return StudentRegistrationSerializer
+
+    def list(self, request, *args, **kwargs):
+        all = None
+        batch = None
+        try:
+            all = request.GET["all"]
+        except MultiValueDictKeyError:
+            pass
+
+        try:
+            batch = request.GET["batch"]
+        except MultiValueDictKeyError:
+            pass
+
+        query = Student.objects.all()
+        if batch != None:
+            query = query.filter(batch="" + batch)
+        if all == "False":
+            query = query.exclude(
+                user__in=User.objects.filter(
+                    members__in=Member.objects.all(),
+                )
+            )
+
+        serializer = StudentSerializerTwo(query, many=True)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+        except Student.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def perform_destroy(self, instance):
+        instance.delete()
     @action(
         detail=False,
         methods=["POST"],
@@ -422,7 +458,6 @@ class StudentModelViewSet(ModelViewSet):
             except:
                 res = error_response(request, MODEL_RECORD_NOT_FOUND, "Batch")
                 return Response(res, content_type="application/json")
-
         try:
             usr=User.objects.get(id=student_id)
             subject='Dear '+form_data["first_name"] +" "+form_data["last_name"]
@@ -435,13 +470,13 @@ class StudentModelViewSet(ModelViewSet):
                 first_name=form_data["first_name"],
                 last_name=form_data["first_name"]
             )
-            email={}
-            email["subject"]=subject
-            email["body"]=message
-            email["from"]=fromMail
-            email["to"]=toArr
-            body={"type":"single","data":email}            
-            tasks.publish_message(body)
+            send_mail(
+                subject,
+                message,
+                fromMail,
+                [toArr],
+                fail_silently=False,
+            ) 
             serializer = StudentSerializer(student_obj)
             return Response(serializer.data)
         except Exception as e:
@@ -462,7 +497,6 @@ class StudentModelViewSet(ModelViewSet):
         else:
             res = error_response(request, MODEL_DELETE_FAILED, "Student")
             return Response(res, content_type="application/json")
-
     @action(
         detail=False,
         methods=["POST"],
@@ -478,21 +512,19 @@ class StudentModelViewSet(ModelViewSet):
             user_obj.email=form_data['email']  # type: ignore
             user_obj.set_password(password)  # type: ignore
             user_obj.save(update_fields=['password'])  # type: ignore
-            email={}
-            email=body=password +" is your new password."
+            body=password +" is your new password."
             from_email ="yidegaait2010@gmail.com"
             to_email=form_data['email']
             subject='Email and Passsword Reset'
             toArr=[to_email]
-            email={}
-            email["subject"]=subject
-            email["body"]=body
-            email["from"]=from_email
-            email["to"]=toArr
-            message={"type":"single","data":email}            
-            tasks.publish_message(message)
+            send_mail(
+                subject,
+                body,
+                from_email,
+                [toArr],
+                fail_silently=False,
+            ) 
             return Response({"message":f"Student with username {form_data['username']} successfuly updated!" })
-   
         else:
             res = error_response(request, MODEL_UPDATE_FAILED, "Student")
             return Response(res, content_type="application/json")

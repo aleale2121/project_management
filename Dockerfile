@@ -16,7 +16,6 @@ ENV PYTHONUNBUFFERED 1
 ENV DEBUG 0
 
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip freeze > requirements.txt
 COPY --from=build-python /opt/venv /opt/venv
 RUN apk update \
     && apk add --virtual build-deps postgresql-dev gcc python3-dev \
@@ -24,15 +23,7 @@ RUN apk update \
     libpq-dev libc-dev linux-headers \
     libffi-dev python3-dev
 
-# Install python and postgres dependencies under a virtual package
-RUN apk add --update --no-cache postgresql-client
-RUN apk add --update --no-cache --virtual .tmp-build-deps \
-      gcc libc-dev linux-headers postgresql-dev musl-dev
-RUN pip install --upgrade pip -r ./requirements.txt
-# RUN pip install -r ./requirements.txt
 
-# Delete virtual packages as we installed our dependencies
-RUN apk del .tmp-build-deps
 
 RUN pip install --upgrade pip
 RUN pip install psycopg2-binary
@@ -43,10 +34,10 @@ WORKDIR /app
 # RUN pip install -r ../requirements.txt
 
 COPY ./app /app
-# RUN python3 manage.py collectstatic --ignore
 
-COPY ./app/wait-for /bin/wait-for
-RUN chmod 777 -R /bin/wait-for
+RUN python manage.py collectstatic --noinput
+
 RUN adduser -D user
 USER user
+
 CMD gunicorn app.wsgi:application --bind 0.0.0.0:$PORT

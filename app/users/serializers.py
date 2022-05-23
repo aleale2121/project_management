@@ -1,9 +1,7 @@
 import email
 from distutils.file_util import write_file
 from django.forms import model_to_dict
-
 from django.shortcuts import get_object_or_404
-
 from core.models import Batch, Coordinator, Member, Staff, Student, User
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.base_user import BaseUserManager
@@ -11,7 +9,7 @@ from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
-from users import tasks
+# from users import tasks
 
 #Meta UserName is an identification number 
 class AuthTokenSerializer(serializers.Serializer):
@@ -176,10 +174,8 @@ class AdminRegistrationSerializer(serializers.ModelSerializer):
 
 class StaffRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for the staff registration"""
-
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
-
     class Meta:
         model = User
         fields = ["username", "email", "first_name", "last_name"]
@@ -197,17 +193,13 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
             last_name=self.validated_data["last_name"],
         )
         from_email = "yidegaait2010@gmail.com"
-        subject="Dear "+self.validated_data["first_name"]+" "+self.validated_data["last_name"]
-        message=password+" is your password for site repository management application,don't share to anybody!"
-        fromMail=from_email,
-        toArr=[user.email],
-        email={}
-        email["subject"]=subject
-        email["body"]=message
-        email["from"]=fromMail
-        email["to"]=toArr
-        body={"type":"single","data":email}            
-        tasks.publish_message(body)
+        send_mail(
+                "SiTE Project Repository Password",
+                password,
+                from_email,
+                [user.email],
+                fail_silently=False,
+            )          
         print("email sent")
         return staff
 
@@ -236,17 +228,13 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
             last_name=self.validated_data["last_name"],
         )
         from_email = "yidegaait2010@gmail.com"
-        subject="Dear "+self.validated_data["first_name"]+" "+self.validated_data["last_name"]
-        message=password+" is your password for site repository management application,don't share to anybody!"
-        fromMail=from_email,
-        toArr=[user.email],
-        email={}
-        email["subject"]=subject
-        email["body"]=message
-        email["from"]=fromMail
-        email["to"]=toArr
-        body={"type":"single","data":email}            
-        tasks.publish_message(body)
+        send_mail(
+                "SiTE Project Repository Password",
+                password,
+                from_email,
+                [user.email],
+                fail_silently=False,
+            )
         print("email sent")
         return student
     def updateStudent(self, **kwargs):

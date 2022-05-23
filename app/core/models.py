@@ -65,7 +65,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_student = models.BooleanField(default=False)
 
     objects = UserManager()
-
     USERNAME_FIELD = "username"
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = ["email"]

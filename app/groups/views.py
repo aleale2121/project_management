@@ -17,6 +17,7 @@ from core.permissions import (
     IsAdminOrReadOnly,
     IsCoordinatorOrReadOnly,
     IsStaffOrReadOnly,
+    IsStudent,
     IsStudentOrReadOnly,
 )
 from django.db import transaction
@@ -94,6 +95,18 @@ class GroupsModelViewSet(ModelViewSet):
             member = Member.objects.get(group=group, member=request.user)
         except Member.DoesNotExist:
             return Response({"error": "your are not authorized to edit the group"})
+    @action(
+        detail=False,
+        methods=["GET"],
+        permission_classes=[IsStudent],
+        # url_path="(?P<batch>[^/.]+)",
+    )
+    def mygroup(self, request):
+
+        groups_list = ReadGroupSerializer(
+            Group.objects.filter(members__member__exact=request.user), many=True
+        )
+        return Response(groups_list.data)
 
 
 class MemberModelViewSet(viewsets.ModelViewSet):
@@ -164,6 +177,8 @@ class MemberModelViewSet(viewsets.ModelViewSet):
             member = Member.objects.get(group=group, member=request.user)
         except Member.DoesNotExist:
             return Response({"error": "your are not authorized to edit or view the group"})
+
+
 
 
 class AdvisorModelViewSet(ModelViewSet):

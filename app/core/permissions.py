@@ -19,12 +19,14 @@ class IsAdminOrReadOnly(BasePermission):
 
 class IsStudentOrReadOnly(BasePermission):
     def has_permission(self, request, view):
-        return bool(
+        isStud=bool(
             request.method in SAFE_METHODS
             or request.user
             and request.user.is_authenticated
             and request.user.is_student
         )
+        print("************is--student--")
+        return isStud
 
 
 class IsAdmin(BasePermission):

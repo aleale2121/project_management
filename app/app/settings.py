@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     "users",
     "groups",
     "evaluations",
-    "titles",
     "submission_types",
     "submission_dead_lines",
     "top_projects",

@@ -194,3 +194,7 @@ class Voter(models.Model):
 
     user_id = models.ForeignKey(User, related_name="voters", on_delete=models.CASCADE)
     project_id = models.ForeignKey(ProjectTitle, related_name="projects", on_delete=models.CASCADE)
+
+
+class CountModel(models.Model):
+    count=models.IntegerField()

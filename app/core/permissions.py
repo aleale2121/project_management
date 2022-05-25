@@ -1,4 +1,5 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
+
 from core.models import Batch, Coordinator, Member
 
 
@@ -19,14 +20,12 @@ class IsAdminOrReadOnly(BasePermission):
 
 class IsStudentOrReadOnly(BasePermission):
     def has_permission(self, request, view):
-        isStud=bool(
+        return bool(
             request.method in SAFE_METHODS
             or request.user
             and request.user.is_authenticated
             and request.user.is_student
         )
-        print("************is--student--")
-        return isStud
 
 
 class IsAdmin(BasePermission):
@@ -68,6 +67,44 @@ class IsStaffOrReadOnly(BasePermission):
 
 class IsCoordinatorOrReadOnly(BasePermission):
     def has_permission(self, request, view):
+        user = request.user
+        active_batch = None
+        try:
+            active_batch = Batch.objects.get(is_active=True)
+        except Batch.DoesNotExist:
+            pass
+
+        coordinator_history = None
+        is_coordinator = False
+
+        if active_batch != None:
+            try:
+                coordinator_history = Coordinator.objects.get(user=user, batch=active_batch)
+            except Coordinator.DoesNotExist:
+                pass
+        if coordinator_history != None:
+            is_coordinator = True
+
+        return bool(
+            request.method in SAFE_METHODS
+            or request.user
+            and request.user.is_authenticated
+            and request.user.is_staff
+            and is_coordinator
+        )
+
+
+class IsCoordinatorOrStudentReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        is_student = bool(
+            request.method in SAFE_METHODS
+            or request.user
+            and request.user.is_authenticated
+            and request.user.is_student
+        )
+        if is_student:
+            return True
+
         user = request.user
         active_batch = None
         try:

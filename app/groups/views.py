@@ -120,9 +120,9 @@ class MemberModelViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request, group_pk=None):
-        response = self.check_membership(request, group_pk)
-        if response != None:
-            return response
+        # response = self.check_membership(request, group_pk)
+        # if response != None:
+        #     return response
 
         group = get_object_or_404(Group.objects, pk=group_pk)
         user = get_object_or_404(User.objects, username=request.data["member"])
@@ -134,9 +134,9 @@ class MemberModelViewSet(viewsets.ModelViewSet):
         return super(MemberModelViewSet, self).create(request)
 
     def update(self, request, group_pk=None, *args, **kwargs):
-        response = self.check_membership(request, group_pk)
-        if response != None:
-            return response
+        # response = self.check_membership(request, group_pk)
+        # if response != None:
+        #     return response
         group = Member.objects.get(id=group_pk)
         request.data["group"] = group.pk
         return super(MemberModelViewSet, self).update(request, *args, **kwargs)
@@ -154,9 +154,9 @@ class MemberModelViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, pk=None, group_pk=None):
-        response = self.check_membership(request, group_pk)
-        if response != None:
-            return response
+        # response = self.check_membership(request, group_pk)
+        # if response != None:
+        #     return response
         member = get_object_or_404(self.queryset, pk=pk, group__pk=group_pk)
         self.perform_destroy(member)
         return Response(status=status.HTTP_204_NO_CONTENT)

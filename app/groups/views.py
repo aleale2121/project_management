@@ -102,7 +102,6 @@ class GroupsModelViewSet(ModelViewSet):
         # url_path="(?P<batch>[^/.]+)",
     )
     def mygroup(self, request):
-
         groups_list = ReadGroupSerializer(
             Group.objects.filter(members__member__exact=request.user), many=True
         )
@@ -130,7 +129,8 @@ class MemberModelViewSet(viewsets.ModelViewSet):
 
         request.data["group"] = group.pk
         request.data["member"] = user.pk
-        return super(ProjectTitleModelViewSet, self).create(request)
+
+        return super(MemberModelViewSet, self).create(request)
 
     def update(self, request, group_pk=None, *args, **kwargs):
         response = self.check_membership(request, group_pk)
@@ -138,7 +138,7 @@ class MemberModelViewSet(viewsets.ModelViewSet):
             return response
         group = Member.objects.get(id=group_pk)
         request.data["group"] = group.pk
-        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)
+        return super(MemberModelViewSet, self).update(request, *args, **kwargs)
 
     def list(self, request, group_pk=None):
         queryset = Member.objects.filter(group=group_pk)

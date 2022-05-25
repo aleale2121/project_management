@@ -2,7 +2,7 @@ import email
 from distutils.file_util import write_file
 from django.forms import model_to_dict
 from django.shortcuts import get_object_or_404
-from core.models import Batch, Coordinator, Member, Staff, Student, User
+from core.models import Batch, Coordinator, CountModel, Member, Staff, Student, User
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.mail import send_mail
@@ -274,3 +274,8 @@ class CoordinatorSerialzer(serializers.ModelSerializer):
     class Meta:
         model = Coordinator
         fields = ("id","batch","user",)
+
+class CountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CountModel
+        fields = ("count")

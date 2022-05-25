@@ -16,6 +16,7 @@ from core.permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
     IsCoordinatorOrReadOnly,
+    IsCoordinatorOrStudentReadOnly,
     IsStaffOrReadOnly,
     IsStudent,
     IsStudentOrReadOnly,
@@ -23,6 +24,7 @@ from core.permissions import (
 from django.db import transaction
 from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
+from django.utils.datastructures import MultiValueDictKeyError
 from pkg.util import error_response
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -95,6 +97,7 @@ class GroupsModelViewSet(ModelViewSet):
             member = Member.objects.get(group=group, member=request.user)
         except Member.DoesNotExist:
             return Response({"error": "your are not authorized to edit the group"})
+
     @action(
         detail=False,
         methods=["GET"],
@@ -102,14 +105,12 @@ class GroupsModelViewSet(ModelViewSet):
         # url_path="(?P<batch>[^/.]+)",
     )
     def mygroup(self, request):
-        groups_list = ReadGroupSerializer(
-            Group.objects.filter(members__member__exact=request.user), many=True
-        )
+        groups_list = ReadGroupSerializer(Group.objects.filter(members__member__exact=request.user), many=True)
         return Response(groups_list.data)
 
 
 class MemberModelViewSet(viewsets.ModelViewSet):
-    permission_classes = (IsStudentOrReadOnly,)
+    permission_classes = (IsCoordinatorOrStudentReadOnly,)
     queryset = Member.objects.all()
 
     def get_serializer_class(self):

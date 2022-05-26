@@ -20,6 +20,7 @@ from core.permissions import (
     IsStaffOrReadOnly,
     IsStudent,
     IsStudentOrReadOnly,
+    PermissionPolicyMixin,
 )
 from django.db import transaction
 from django.forms.models import model_to_dict
@@ -46,13 +47,17 @@ from groups.serializers import (
 )
 
 
-class GroupsModelViewSet(ModelViewSet):
+class GroupsModelViewSet(PermissionPolicyMixin,ModelViewSet):
     filterset_fields = ["batch", "group_name"]
     queryset = Group.objects.all()
     permission_classes = [
-        IsStudentOrReadOnly,
+        IsCoordinatorOrReadOnly,
     ]
-
+    permission_classes_per_method = {
+        # except for list and retrieve where both users with "write" or "read-only"
+        # permissions can access the endpoints.
+        "create": [IsStudent]
+    }
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
             return ReadGroupSerializer
@@ -110,7 +115,7 @@ class GroupsModelViewSet(ModelViewSet):
 
 
 class MemberModelViewSet(viewsets.ModelViewSet):
-    permission_classes = (IsCoordinatorOrStudentReadOnly,)
+    permission_classes = [IsCoordinatorOrReadOnly]
     queryset = Member.objects.all()
 
     def get_serializer_class(self):

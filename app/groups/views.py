@@ -1,4 +1,5 @@
 import json
+from tokenize import group
 
 import requests
 from constants.constants import MODEL_RECORD_NOT_FOUND, MODEL_UPDATE_FAILED
@@ -47,7 +48,7 @@ from groups.serializers import (
 )
 
 
-class GroupsModelViewSet(PermissionPolicyMixin,ModelViewSet):
+class GroupsModelViewSet(PermissionPolicyMixin, ModelViewSet):
     filterset_fields = ["batch", "group_name"]
     queryset = Group.objects.all()
     permission_classes = [
@@ -58,6 +59,7 @@ class GroupsModelViewSet(PermissionPolicyMixin,ModelViewSet):
         # permissions can access the endpoints.
         "create": [IsStudent]
     }
+
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
             return ReadGroupSerializer
@@ -185,8 +187,6 @@ class MemberModelViewSet(viewsets.ModelViewSet):
             return Response({"error": "your are not authorized to edit or view the group"})
 
 
-
-
 class AdvisorModelViewSet(ModelViewSet):
     permission_classes = [IsCoordinatorOrReadOnly]
     queryset = Advisor.objects.all()
@@ -272,6 +272,29 @@ def similarity_check(request, pk):
             "similarProjects": similarProjects,
         }
     )
+
+
+@api_view(["PATCH"])
+@permission_classes([IsCoordinatorOrReadOnly])
+def approve_title(request, pk):
+    title = get_object_or_404(ProjectTitle.objects, pk=pk)
+    ProjectTitle.objects.filter(group=title.group).update(
+        status=ProjectTitle.STATUS_CHOICES.REJECTED,
+    )
+    title=ProjectTitle.objects.filter(pk=pk).update(
+        status=ProjectTitle.STATUS_CHOICES.APPROVED,
+    )
+    return Response(model_to_dict(ProjectTitle.objects.get(pk=title)))
+
+
+@api_view(["PATCH"])
+@permission_classes([IsCoordinatorOrReadOnly])
+def reject_title(request, pk):
+    title = get_object_or_404(ProjectTitle.objects, pk=pk)
+    title=ProjectTitle.objects.filter(pk=pk).update(
+        status=ProjectTitle.STATUS_CHOICES.REJECTED,
+    )    
+    return Response(model_to_dict(ProjectTitle.objects.get(pk=title)))
 
 
 class ProjectTitleModelViewSet(ModelViewSet):

@@ -2,7 +2,7 @@ import json
 from urllib.request import proxy_bypass
 
 from constants.constants import FORBIDDEN_REQUEST_FOUND, MODEL_ALREADY_EXIST, MODEL_CREATION_FAILED, MODEL_RECORD_NOT_FOUND
-from core.models import  Batch, Group, ProjectTitle, TopProject,User,Title, Voter
+from core.models import  Batch, Group, ProjectTitle, TopProject,User, Voter
 from django.db import transaction
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend

@@ -9,15 +9,6 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.timezone import now
 from rest_framework.authtoken.models import Token
-# Title model
-class Title(models.Model):
-    class Meta:
-        db_table = "titles"
-        unique_together = ["name"]
-
-    name = models.CharField(max_length=100, unique=True)
-    created_at = models.DateTimeField(default=now, editable=True)
-    updated_at = models.DateTimeField(default=now, editable=True)
 # Semister models
 class Semister(models.Model):
     class Meta:
@@ -65,7 +56,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_student = models.BooleanField(default=False)
 
     objects = UserManager()
-
     USERNAME_FIELD = "username"
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = ["email"]
@@ -171,7 +161,7 @@ class ProjectTitle(models.Model):
         THREE = 3
 
     class Meta:
-        # db_table = "project_title"
+        db_table = "project_title"
         unique_together = ["group","no"]
 
     title_name = models.CharField(max_length=200)
@@ -184,9 +174,9 @@ class ProjectTitle(models.Model):
 
 # TopProject model
 class TopProject(models.Model):
-    title    = models.ForeignKey(ProjectTitle, related_name="project_title", on_delete=models.CASCADE)
-    batch    = models.ForeignKey(Batch,null=True, related_name="project_batch", on_delete=models.CASCADE)
-    group    = models.ForeignKey(Group, related_name="project_group", on_delete=models.CASCADE)
+    title    = models.ForeignKey(ProjectTitle, related_name="top_projects_title", on_delete=models.CASCADE, null=True)
+    batch    = models.ForeignKey(Batch, related_name="top_projects_batch", on_delete=models.CASCADE, null=True)
+    group    = models.ForeignKey(Group, related_name="top_projects_group", on_delete=models.CASCADE, null=True)
     doc_path = models.CharField(max_length=500, blank=True)
     vote     = models.IntegerField(null=True,default=0)
     description = models.CharField(max_length=1000, blank=True)
@@ -194,7 +184,7 @@ class TopProject(models.Model):
 
     class Meta:
         db_table = "top_projects"
-        unique_together = ["batch","group"]
+        unique_together = ["batch","title"]
 
 # Voter models
 class Voter(models.Model):
@@ -228,3 +218,7 @@ class Chat(models.Model):
 
     def __str__(self):
         return "{}".format(self.pk)
+
+
+class CountModel(models.Model):
+    count=models.IntegerField()

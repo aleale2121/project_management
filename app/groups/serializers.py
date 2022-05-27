@@ -213,12 +213,6 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         current_user = self.context["request"].user
-        # u = User.objects.get(username='username31')
-        # print("---")
-        # print(u)
-        # print("---")
-        # u.set_password('password')
-        # u.save()
         view = self.context.get("view")
         group = get_object_or_404(Group, pk=view.kwargs["pk"])
         batch = get_object_or_404(Batch, pk=group.batch)
@@ -448,24 +442,25 @@ class ReadProjectTitleFromMapSerializer(serializers.ModelSerializer):
             "rejection_reason",
             "group",
         )
+
     def id(self, obj):
-        return obj['no']
+        return obj["no"]
 
     def validate(self, data):
         return super().validate(data)
 
     def get_no(self, obj):
-        return obj['no']
+        return obj["no"]
 
     def get_title_name(self, obj):
 
-        return obj['title_name']
+        return obj["title_name"]
 
     def get_title_description(self, obj):
-        return obj['title_description']
+        return obj["title_description"]
 
     def get_status(self, obj):
-        return obj['status']
+        return obj["status"]
 
     def get_rejection_reason(self, obj):
-        return obj['rejection_reason']
+        return obj["rejection_reason"]

@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # environ.Env.read_env(".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY_DEFAULT = "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*u7wd6t90b8"
+SECRET_KEY_DEFAULT = "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*%tu7wd6t90b8"
 SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -28,9 +28,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # 'whitenoise.runserver_nostatic'
     "rest_framework",
     "corsheaders",
-    'django_celery_results',
     "rest_framework.authtoken",
     'django_filters',
     'rest_framework_swagger',
@@ -41,12 +41,9 @@ INSTALLED_APPS = [
     "channels",
     "groups",
     "evaluations",
-    "titles",
-    "semisters",
     "submission_types",
     "submission_dead_lines",
     "top_projects",
-
 ]
 
 MIDDLEWARE = [
@@ -153,7 +150,9 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 STATIC_ROOT = '/vol/web/static'
 MEDIA_ROOT = '/vol/web/media'
+
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = ["http://localhost:3000", "https://sfpm.herokuapp.com"]
@@ -194,7 +193,6 @@ REDIS_URL='redis://localhost:6379/0'
 
 AUTH_USER_MODEL = "core.User"
 ACCOUNT_UNIQUE_EMAIL = True
-APPEND_SLASH = False
 
 
 TEMPLATE_LOADERS = (

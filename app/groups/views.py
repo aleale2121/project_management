@@ -129,13 +129,13 @@ class MemberModelViewSet(ModelViewSet):
         if response != None:
             return response
 
-        group = get_object_or_404(Group.objects, pk=group_pk)
-        user = get_object_or_404(User.objects, username=request.data["member"])
-        get_object_or_404(Student.objects, user=user.pk)
+        group = get_object_or_404(Group, pk=group_pk)
+        user = get_object_or_404(User, username=request.data["member"])
+        get_object_or_404(Student, user=user.pk)
 
         request.data["group"] = group.pk
         request.data["member"] = user.pk
-        return super(ProjectTitleModelViewSet, self).create(request)
+        return super(ProjectTitleModelViewSet, self).create(request)  # type: ignore
 
     def update(self, request, group_pk=None, *args, **kwargs):
         response = self.check_membership(request, group_pk)
@@ -143,7 +143,7 @@ class MemberModelViewSet(ModelViewSet):
             return response
         group = Member.objects.get(id=group_pk)
         request.data["group"] = group.pk
-        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)
+        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)  # type: ignore
 
     def list(self, request, group_pk=None):
         queryset = Member.objects.filter(group=group_pk)
@@ -223,11 +223,17 @@ class ExaminerModelViewSet(ModelViewSet):
 
 class ProjectTitleModelViewSet(ModelViewSet):
 
+    permission_classes = (IsStudentOrReadOnly,)
+    queryset = ProjectTitle.objects.all()
 
-
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return ReadProjectTitleSerializer
+        return WriteProjectTitleSerializer
+    
 @api_view(['GET'])
 def similarity_check(request, pk):
-    title = get_object_or_404(ProjectTitle.objects, pk=pk)
+    title = get_object_or_404(ProjectTitle, pk=pk)
     
     allProjects = ProjectTitle.objects.all()
     filtered = []
@@ -266,23 +272,12 @@ def similarity_check(request, pk):
     })
 
 
-
-class ProjectTitleModelViewSet(ModelViewSet):
-
-    permission_classes = (IsStudentOrReadOnly,)
-    queryset = ProjectTitle.objects.all()
-
-    def get_serializer_class(self):
-        if self.action in ("list", "retrieve"):
-            return ReadProjectTitleSerializer
-        return WriteProjectTitleSerializer
-
     def create(self, request, group_pk=None):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
 
-        group = get_object_or_404(Group.objects, pk=group_pk)
+        group = get_object_or_404(Group, pk=group_pk)
         title = None
         try:
             title = ProjectTitle.objects.get(group=group, no=request.data["no"])
@@ -302,7 +297,7 @@ class ProjectTitleModelViewSet(ModelViewSet):
         except ProjectTitle.DoesNotExist:
             pass
         request.data["group"] = group
-        response= super(ProjectTitleModelViewSet, self).create(request)
+        response= super(ProjectTitleModelViewSet, self).create(request)  # type: ignore
         print("new title \n")
         data=response.data
         # serializer=ReadProjectTitleFromMapSerializer(response.data)
@@ -320,11 +315,11 @@ class ProjectTitleModelViewSet(ModelViewSet):
         allProjects = ProjectTitle.objects.all()
         filtered = []
         for prj in allProjects:
-            if prj.id != newtitle.id:
+            if prj.id != newtitle.id:  # type: ignore
                 filtered.append({"id": prj.id, "description": prj.title_description})
         payload = {
             "project": {
-                "id": newtitle.id,
+                "id": newtitle.id,  # type: ignore
                 "description": newtitle.title_description,
             },
             "comparableProjects":filtered
@@ -358,9 +353,9 @@ class ProjectTitleModelViewSet(ModelViewSet):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
-        group = get_object_or_404(Group.objects, pk=group_pk)
+        group = get_object_or_404(Group, pk=group_pk)
         request.data["group"] = group
-        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)
+        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)  # type: ignore
 
     def list(self, request, group_pk=None):
 

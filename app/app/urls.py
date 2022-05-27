@@ -31,6 +31,12 @@ urlpatterns = [
     path("api/", include("submission_types.urls")),
     path("api/", include("top_projects.urls")),
     path('chat/', include('chatrooms.urls')),
+    path('api/chat/', include('chatrooms.api.urls', namespace='chat')),
+   #  path('rest-auth/', include('rest_auth.urls')),
+   #  path('rest-auth/registration/', include('rest_auth.registration.urls')),
+   #  path('api-auth/', include('rest_framework.urls')),
+
+
 
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # type: ignore
 

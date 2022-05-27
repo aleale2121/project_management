@@ -1,15 +1,12 @@
 from __future__ import absolute_import, unicode_literals
 # Standard Library
 import os
-import kombu
+import kombu # type: ignore
 from celery import Celery, bootsteps
 from django.core.mail import send_mass_mail,send_mail
-
-
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
-
-app = Celery('app',broker='amqp://admin:admin@rabbit:5672//')
+app = Celery('app')  # type: ignore
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
@@ -45,7 +42,7 @@ with app.pool.acquire(block=True) as conn:
 
 
 # setting consumer
-class MyConsumerStep(bootsteps.ConsumerStep):
+class MyConsumerStep(bootsteps.ConsumerStep):  # type: ignore
 
     def get_consumers(self, channel):
         return [kombu.Consumer(channel,

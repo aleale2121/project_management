@@ -16,6 +16,6 @@ router.register(r"examiners", views.ExaminerModelViewSet, basename="groups-exami
 urlpatterns = [
     path(r'', include(router.urls)),
     path(r'', include(groups_router.urls)),
-    path("check-similarity/<int:pk>/", views.similarity_check, name="check-similarity"),
+    # path("check-similarity/<int:pk>/", views.similarity_check, name="check-similarity"),
 
 ] 

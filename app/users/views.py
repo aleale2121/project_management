@@ -23,6 +23,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import APIView, ObtainAuthToken
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
+
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from users import tasks
@@ -54,6 +55,9 @@ class BatchModelViewSet(ModelViewSet):
 
 class CreateTokenView(ObtainAuthToken):
     """Create a new token for user"""
+    serializer_class = AuthTokenSerializer
+    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -97,24 +101,20 @@ class CreateTokenView(ObtainAuthToken):
 
             except Batch.DoesNotExist:
                 pass
-
         return Response(
-            {
-                "token": token.key,
+            {"token": token.key,
                 "user_id": user.pk,
                 "is_superadmin": user.is_superuser,
                 "is_staff": user.is_staff,
                 "is_coordinator": is_coordinator,
                 "is_student": user.is_student,
                 "group": joinedGroup,
-                "advisor_to": advisor_to.data,
-                "examiner_to": examiner_to.data,
-            }
-        )
-
-    serializer_class = AuthTokenSerializer
-    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
-
+                "advisor_to": advisor_to.data,  # type: ignore
+                "examiner_to": examiner_to.data,  # type: ignore
+            })
+            
+        
+        
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
     """Manage the authenticated user"""
@@ -161,7 +161,7 @@ def advisor_groups_view(request, format=None):
 
         except Batch.DoesNotExist:
             pass
-    return Response(((advisor_to.data)))
+    return Response(((advisor_to)))
 
 
 @api_view(["GET"])
@@ -184,7 +184,7 @@ def examiner_groups_view(request, format=None):
 
         except Batch.DoesNotExist:
             pass
-    return Response(((examiner_to.data)))
+    return Response(((examiner_to)))
 
 
 class AdminViewSet(ModelViewSet):
@@ -294,17 +294,28 @@ class StudentRegistrationModelViewSet(ModelViewSet):
                 }
             )
 
-        from_email = "alefewyimer2@gmail.com"
+        from_email = "yidegaait2010@gmail.com"
         email_tuple = tuple()
 
         for i in ctx_list:
             email_tuple = email_tuple + ((i["subject"], i["msg"], from_email, [i["email"]]),)
 
         fs.delete(tmp_file)
-        email_res = send_mass_mail((email_tuple), fail_silently=False)
-        Student.objects.bulk_create(student_list)
-        return Response("Students registered  successfully")
+        # email_res = send_mass_mail((email_tuple), fail_silently=False)
+        try:
+            print("Students Creating ...")
+            Student.objects.bulk_create(student_list)
+            message={
+                "type":"bulk",
+                "data":email_tuple
+            }
+            tasks.publish_message(message)
+            return Response({"message":"Students registered  successfully"})
+        except Exception as e:
+            print("error while sending message ",e)
+            return Response({ "message":"Error Has Occured while registering students!"})
 
+        
 class StudentModelViewSet(ModelViewSet):
     
     filterset_fields = [

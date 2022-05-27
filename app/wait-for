@@ -1,7 +1,6 @@
 #!/bin/sh
 
 # Obtained on 19-11-2019 from https://github.com/eficode/wait-for
-
 TIMEOUT=15
 QUIET=0
 

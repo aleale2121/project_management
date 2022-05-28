@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 from core.models import Chat, Contact
 from rest_framework.response import Response
 
-
 User = get_user_model()
 def get_user_contact(username):
     contact = None

@@ -78,20 +78,20 @@ TEMPLATES = [
 
 # WSGI_APPLICATION = "app.wsgi.application"
 ASGI_APPLICATION = "app.routing.application"
-# CHANNEL_LAYERS = {
-# 	'default': {
-# 		'BACKEND': 'channels_redis.core.RedisChannelLayer',
-# 		'CONFIG': {
-# 			"hosts": ['redis://redis:6379/0'],
-# 		},
-# 	},
-# }
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-#        'LOCATION': 'redis://localhost:6379/0',
-#     }
-# }
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+       'LOCATION': 'redis://localhost:6379/0',
+    }
+}
 
 CHANNEL_LAYERS = {
     "default": {

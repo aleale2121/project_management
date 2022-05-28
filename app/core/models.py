@@ -1,3 +1,5 @@
+from statistics import mode
+
 from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -9,11 +11,14 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.timezone import now
 from rest_framework.authtoken.models import Token
+
+
 # Semister models
 class Semister(models.Model):
     class Meta:
         db_table = "semisters"
         unique_together = ["name"]
+
     name = models.CharField(max_length=200, unique=True)
 
 
@@ -73,22 +78,25 @@ class Student(models.Model):
     first_name = models.CharField(max_length=15, blank=True)
     last_name = models.CharField(max_length=15, blank=True)
 
+
 class Staff(models.Model):
     user = models.OneToOneField(User, related_name="staff", on_delete=models.CASCADE)
     first_name = models.CharField(max_length=15, blank=True)
     last_name = models.CharField(max_length=15, blank=True)
+
 
 class Coordinator(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="coordinators")
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="coordinators")
 
     class Meta:
-        unique_together = ["user","batch"]
+        unique_together = ["user", "batch"]
 
 
 class Group(models.Model):
     group_name = models.CharField(max_length=25)
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="groups")
+
     class Meta:
         unique_together = ["group_name", "batch"]
 
@@ -116,13 +124,15 @@ class Examiner(models.Model):
     class Meta:
         unique_together = ["group", "examiner"]
 
+
 class SubmissionType(models.Model):
     class Meta:
         db_table = "submission_types"
         unique_together = ["name"]
+
     name = models.CharField(max_length=200, unique=True, primary_key=True)
     max_mark = models.FloatField(null=True)
-    semister = models.ForeignKey(Semister, null=True,related_name="semisters", on_delete=models.CASCADE)
+    semister = models.ForeignKey(Semister, null=True, related_name="semisters", on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=now, editable=True)
     updated_at = models.DateTimeField(default=now, editable=True)
 
@@ -131,13 +141,16 @@ class SubmissionDeadLine(models.Model):
     name = models.ForeignKey(SubmissionType, on_delete=models.CASCADE, related_name="submission_type_deadline")
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="submission_deadline_batch")
     dead_line = models.DateTimeField(default=now, editable=True)
+
     class Meta:
         unique_together = ["name", "batch"]
         db_table = "submission_dead_lines"
 
+
 class StudentEvaluation(models.Model):
     class Meta:
         db_table = "student_evalaution"
+
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="member_student")
     submission_type = models.ForeignKey(
         SubmissionType, null=True, on_delete=models.CASCADE, related_name="student_evaluation"
@@ -162,7 +175,7 @@ class ProjectTitle(models.Model):
 
     class Meta:
         db_table = "project_title"
-        unique_together = ["group","no"]
+        unique_together = ["group", "no"]
 
     title_name = models.CharField(max_length=200)
     title_description = models.TextField()
@@ -174,27 +187,38 @@ class ProjectTitle(models.Model):
 
 # TopProject model
 class TopProject(models.Model):
-    title    = models.ForeignKey(ProjectTitle, related_name="top_projects_title", on_delete=models.CASCADE, null=True)
-    batch    = models.ForeignKey(Batch, related_name="top_projects_batch", on_delete=models.CASCADE, null=True)
-    group    = models.ForeignKey(Group, related_name="top_projects_group", on_delete=models.CASCADE, null=True)
+    title = models.ForeignKey(ProjectTitle, related_name="top_projects_title", on_delete=models.CASCADE, null=True)
+    batch = models.ForeignKey(Batch, related_name="top_projects_batch", on_delete=models.CASCADE, null=True)
+    group = models.ForeignKey(Group, related_name="top_projects_group", on_delete=models.CASCADE, null=True)
     doc_path = models.CharField(max_length=500, blank=True)
-    vote     = models.IntegerField(null=True,default=0)
+    vote = models.IntegerField(null=True, default=0)
     description = models.CharField(max_length=1000, blank=True)
     is_approved = models.BooleanField(default=False)
 
     class Meta:
         db_table = "top_projects"
-        unique_together = ["batch","title"]
+        unique_together = ["batch", "title"]
+
 
 # Voter models
 class Voter(models.Model):
     class Meta:
         db_table = "voters"
-        unique_together = ["user_id",]
+        unique_together = [
+            "user_id",
+        ]
 
     user_id = models.ForeignKey(User, related_name="voters", on_delete=models.CASCADE)
     project_id = models.ForeignKey(ProjectTitle, related_name="projects", on_delete=models.CASCADE)
 
 
+class TitleSubmissionDeadline(models.Model):
+    batch = models.ForeignKey(Batch, related_name="title_submission_deadline_batch", on_delete=models.CASCADE)
+    deadline = models.DateTimeField(editable=True)
+
+    class Meta:
+        unique_together = ["batch", "deadline"]
+
+
 class CountModel(models.Model):
-    count=models.IntegerField()
+    count = models.IntegerField()

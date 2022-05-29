@@ -31,46 +31,6 @@ class IsStudentOrReadOnly(BasePermission):
         )
 
 
-class IsStudentOrReadOnlyAndGroupMember(BasePermission):
-    def has_permission(self, request, view):
-        is_student_or_safe = bool(
-            request.method in SAFE_METHODS
-            or request.user
-            and request.user.is_authenticated
-            and request.user.is_student
-        )
-        if not is_student_or_safe:
-            return False
-
-        if not request.method in SAFE_METHODS:
-            print("********* ", request.method)
-            if request.method == "POST":
-                group = None
-                try:
-                    group = Group.objects.get(id=request.data["group"])
-                except KeyError:
-                    return False
-                except Group.DoesNotExist:
-                    return False
-                try:
-                    Member.objects.get(group=group, member=request.user)
-                except Member.DoesNotExist:
-                    return False
-            if request.method == "DELETE" or request.method == "PUT" or request.method == "PATCH":
-                group = None
-                try:
-                    print(view.kwargs["pk"])
-                    submission = Submission.objects.get(id=view.kwargs["pk"])
-                    group = submission.group
-                except Submission.DoesNotExist:
-                    return False
-                try:
-                    Member.objects.get(group=group, member=request.user)
-                except Member.DoesNotExist:
-                    return False
-        return True
-
-
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.is_superuser)

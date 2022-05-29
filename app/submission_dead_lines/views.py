@@ -1,4 +1,5 @@
 import json
+from core.permissions import IsCoordinatorOrReadOnly
 
 from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
 from core.models import Batch, Examiner, Member, StudentEvaluation, SubmissionDeadLine, SubmissionType
@@ -10,7 +11,7 @@ from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 
-from .serializer import SubmissionDeadLineSerializer
+from .serializer import SubmissionDeadLineSerializer, TitleSubmissionDeadLineSerializer
 
 
 class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
@@ -19,7 +20,8 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
     ordering_fields = ["name", "batch", "dead_line"]
     search_fields = ["name", "batch", "dead_line"]
     filter_fields = ["name", "batch", "dead_line"]
-
+    permission_classes=[IsCoordinatorOrReadOnly]
+    
     def get_queryset(self):
         deadlines = SubmissionDeadLine.objects.all().order_by("id")
         return deadlines
@@ -98,3 +100,8 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
             return Response(res, content_type="application/json")
         instance.delete()
         return Response({"result": "SubmissionDeadLine instance was successfuly deleted!"})
+
+class TitleSubmissionDeadLineViewSet(viewsets.ModelViewSet):
+    serializer_class = TitleSubmissionDeadLineSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    permission_classes=[IsCoordinatorOrReadOnly]

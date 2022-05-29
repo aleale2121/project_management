@@ -1,5 +1,5 @@
 from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
-from core.models import SubmissionType
+from core.models import Semister, SubmissionType
 from django.db import transaction
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -7,7 +7,9 @@ from pkg.util import error_response, success_response
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
+
 from .serializer import SubmissionTypeSerializer
+
 
 class SubmissionTypeViewSet(viewsets.ModelViewSet):
     serializer_class = SubmissionTypeSerializer
@@ -31,7 +33,11 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
             return Response(res, content_type="application/json")
         else:
             pass
-        new_sub_type_obj = SubmissionType.objects.create(name=data["name"],max_mark=data["max_mark"])
+        new_sub_type_obj = SubmissionType.objects.create(
+            name=data["name"],
+            max_mark=data["max_mark"],
+            semister=Semister.objects.get(id=data["semister"])
+        )
         serializer = SubmissionTypeSerializer(new_sub_type_obj)
         data = success_response(serializer.data)
         return Response((data))

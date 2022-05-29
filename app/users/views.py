@@ -283,7 +283,8 @@ class StudentRegistrationModelViewSet(ModelViewSet):
             (username, email, firstname, lastname) = row
             user = User(username=username, email=email)
             batch_model = Batch(name=batch)
-            password = BaseUserManager().make_random_password()
+            password = "password"
+            # password = BaseUserManager().make_random_password()
             user.is_student = True
             user.set_password(password)
             user.save()

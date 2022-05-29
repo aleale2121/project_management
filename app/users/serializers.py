@@ -1,20 +1,25 @@
+from asyncio import tasks
 import email
 from distutils.file_util import write_file
+from email.errors import MessageError
 from django.forms import model_to_dict
 from django.shortcuts import get_object_or_404
+from constants.constants import MODEL_CREATION_FAILED, MODEL_RECORD_NOT_FOUND
+from pkg.util import error_response
 from core.models import Batch, Coordinator, CountModel, Member, Staff, Student, User
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from rest_framework.response import Response
+
 from rest_framework.fields import SerializerMethodField
 # from users import tasks
 
 #Meta UserName is an identification number 
 class AuthTokenSerializer(serializers.Serializer):
     """Serializer for the user authenticate object"""
-
     username = serializers.CharField()
     password = serializers.CharField(style={"input_type": "password"}, trim_whitespace=False)
 
@@ -22,8 +27,9 @@ class AuthTokenSerializer(serializers.Serializer):
         """Validate and authenticate the user"""
         username = attrs.get("username")
         password = attrs.get("password")
+        print(username,"<===>",password)
         user = authenticate(request=self.context.get("request"), username=username, password=password)
-
+        print("user=> ",user)
         if not user:
             msg = _("Unable to authenticate with provided credentials.")
             raise serializers.ValidationError(msg, code="authentication")
@@ -75,6 +81,7 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 class StudentSerializerTwo(serializers.ModelSerializer):
+    
     """Serializer for the student object"""
     username = SerializerMethodField()
     email = SerializerMethodField()
@@ -100,6 +107,7 @@ class StudentSerializerTwo(serializers.ModelSerializer):
 
     def get_last_name(self, obj):
         return obj.last_name
+
 
 
 class StaffSerializer(serializers.ModelSerializer):
@@ -219,15 +227,21 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.is_superuser = False
         user.is_student = True
-        user.save()
-
-        student = Student.objects.create(
+        user.save()  
+        try:
+            student = Student.objects.create(
             user=user,
             batch=self.validated_data["batch"],
             first_name=self.validated_data["first_name"],
             last_name=self.validated_data["last_name"],
-        )
-        from_email = "yidegaait2010@gmail.com"
+        )  
+        except:
+            print()  
+            res = error_response(self.request, MODEL_CREATION_FAILED, "SubmissionDeadLine")
+            return Response(res, content_type="application/json")     
+        
+
+        from_email = "alefewyimer2@gmail.com"
         send_mail(
                 "SiTE Project Repository Password",
                 password,
@@ -235,6 +249,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
                 [user.email],
                 fail_silently=False,
             )
+        
         print("email sent")
         return student
     def updateStudent(self, **kwargs):
@@ -254,12 +269,15 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         if change_pass==True:
             password = BaseUserManager().make_random_password()
             user.set_password(password)
-            from_email = "alefewyimer2@gmail.com"
+            subject='Dear '+user.first_name +" "+user.last_name
+            message=password +' is your new passsword!'
+            fromMail='alefewyimer2@gmail.com'
+            toArr=[user.email]
             send_mail(
-                "SiTE Project Repository Password",
-                password,
-                from_email,
-                [user.email],
+                subject,
+                message,
+                fromMail,
+                toArr,
                 fail_silently=False,
             )
         student = super().update(student, self.validated_data)

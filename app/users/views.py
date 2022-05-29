@@ -14,7 +14,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.forms.models import model_to_dict
-from django.core.mail import send_mass_mail
+from django.core.mail import send_mass_mail,send_mail
 from django.shortcuts import get_object_or_404
 from django.utils.datastructures import MultiValueDictKeyError
 from groups.serializers import ReadGroupSerializer
@@ -26,7 +26,6 @@ from rest_framework.response import Response
 
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
-from users import tasks
 
 
 from users.serializers import (
@@ -68,7 +67,6 @@ class CreateTokenView(ObtainAuthToken):
             active_batch = Batch.objects.get(is_active=True)
         except Batch.DoesNotExist:
             pass
-
         coordinator_history = None
         is_coordinator = False
 
@@ -103,14 +101,14 @@ class CreateTokenView(ObtainAuthToken):
                 pass
         return Response(
             {"token": token.key,
-                "user_id": user.pk,
-                "is_superadmin": user.is_superuser,
-                "is_staff": user.is_staff,
-                "is_coordinator": is_coordinator,
-                "is_student": user.is_student,
-                "group": joinedGroup,
-                "advisor_to": advisor_to.data,  # type: ignore
-                "examiner_to": examiner_to.data,  # type: ignore
+                # "user_id": user.pk,
+                # "is_superadmin": user.is_superuser,
+                # "is_staff": user.is_staff,
+                # "is_coordinator": is_coordinator,
+                # "is_student": user.is_student,
+                # "group": joinedGroup,
+                # "advisor_to": advisor_to,  # type: ignore
+                # "examiner_to": examiner_to,  # type: ignore
             })
             
         
@@ -294,22 +292,17 @@ class StudentRegistrationModelViewSet(ModelViewSet):
                 }
             )
 
-        from_email = "yidegaait2010@gmail.com"
+        from_email = "alefewyimer2@gmail.com"
         email_tuple = tuple()
 
         for i in ctx_list:
             email_tuple = email_tuple + ((i["subject"], i["msg"], from_email, [i["email"]]),)
 
         fs.delete(tmp_file)
-        # email_res = send_mass_mail((email_tuple), fail_silently=False)
         try:
             print("Students Creating ...")
             Student.objects.bulk_create(student_list)
-            message={
-                "type":"bulk",
-                "data":email_tuple
-            }
-            tasks.publish_message(message)
+            send_mass_mail((email_tuple), fail_silently=False)
             return Response({"message":"Students registered  successfully"})
         except Exception as e:
             print("error while sending message ",e)
@@ -345,13 +338,13 @@ class StudentRegistrationModelViewSet(ModelViewSet):
                 first_name=form_data["first_name"],
                 last_name=form_data["first_name"]
             )
-            email={}
-            email["subject"]=subject
-            email["body"]=message
-            email["from"]=fromMail
-            email["to"]=toArr
-            body={"type":"single","data":email}            
-            tasks.publish_message(body)
+            send_mail(
+                subject,
+                message,
+                fromMail,
+                toArr,
+                fail_silently=False,
+            )
             serializer = StudentSerializer(student_obj)
             return Response(serializer.data)
         except Exception as e:
@@ -388,19 +381,18 @@ class StudentRegistrationModelViewSet(ModelViewSet):
             user_obj.email=form_data['email']  # type: ignore
             user_obj.set_password(password)  # type: ignore
             user_obj.save(update_fields=['password'])  # type: ignore
-            email={}
-            email=body=password +" is your new password."
-            from_email ="yidegaait2010@gmail.com"
+            email=password +" is your new password."
+            from_email ="alefewyimer2@gmail.com"
             to_email=form_data['email']
             subject='Email and Passsword Reset'
             toArr=[to_email]
-            email={}
-            email["subject"]=subject
-            email["body"]=body
-            email["from"]=from_email
-            email["to"]=toArr
-            message={"type":"single","data":email}            
-            tasks.publish_message(message)
+            send_mail(
+                subject,
+                email,
+                from_email,
+                toArr,
+                fail_silently=False,
+            )
             return Response({"message":f"Student with username {form_data['username']} successfuly updated!" })
    
         else:
@@ -421,80 +413,8 @@ class StudentModelViewSet(ModelViewSet):
         IsAdminOrReadOnly,
     ]
 
-    @action(
-        detail=False,
-        methods=["POST"],
-        permission_classes=[IsAdmin],
-        url_path="(?P<batch>[^/.]+)",
-    )
-    def registration(self, request, batch):
-        """Register Students from CSV"""
-        batch = get_object_or_404(Batch, pk=batch)
-        if not batch.is_active:
-            return Response("batch is inactive", status=status.HTTP_400_BAD_REQUEST)
-        file = request.FILES["file"]
-
-        content = file.read()
-        file_content = ContentFile(content)
-        file_name = fs.save("_tmp.csv", file_content)
-        tmp_file = fs.path(file_name)
-
-        csv_file = open(tmp_file, errors="ignore")
-        reader = csv.reader(csv_file)
-        next(reader)
-    
-        student_list = []
-        ctx_list = []
-        for id_, row in enumerate(reader):
-            (username, email, firstname, lastname) = row
-            user = User(username=username, email=email)
-            batch_model = Batch(name=batch)
-            password = BaseUserManager().make_random_password()
-            user.is_student = True
-            user.set_password(password)
-            user.save()
-
-            student_list.append(
-                Student(
-                    user=user,
-                    batch=batch_model,
-                    first_name=firstname,
-                    last_name=lastname,
-                )
-            )
-
-            msg = password+" is your password for site repository management application,don't share it for any one else!"
-            ctx_list.append(
-                {
-                    "username": username,
-                    "first_name": firstname,
-                    "last_name": lastname,
-                    "email": email,
-                    "subject": "Dear "+firstname+" "+lastname,
-                    "msg": msg,
-                }
-            )
-
-        from_email = "yidegaait2010@gmail.com"
-        email_tuple = tuple()
-        for i in ctx_list:
-            email_tuple = email_tuple + ((i["subject"], i["msg"], from_email, [i["email"]]),)
-        fs.delete(tmp_file)
-        # email_res = send_mass_mail((email_tuple), fail_silently=False)
-        try:
-            Student.objects.bulk_create(student_list)
-            message={
-                "type":"bulk",
-                "data":email_tuple
-            }
-            tasks.publish_message(message)
-            return Response({"message":"Students registered  successfully"})
-        except Exception as e:
-            print("error while sending message ",e)
-            return Response({ "message":"Error Has Occured while registering students!"})
-
+   
     def create(self, request, *args, **kwargs):
-        print("***create student***")
         serializer = StudentRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         student = serializer.save()
@@ -510,6 +430,59 @@ class StudentModelViewSet(ModelViewSet):
             data=request.data,
             context={"request": request, "view": self},
         )
+        serializer.is_valid(raise_exception=True)
+        get_object_or_404(Batch, name=request.data["batch"])
+        student = serializer.updateStudent()
+        student_serialize = StudentSerializerTwo(student)
+        data = student_serialize.data
+        return Response(data)
+
+    
+    
+    
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return StudentSerializerTwo
+        return StudentRegistrationSerializer
+
+    def list(self, request, *args, **kwargs):
+        all = None
+        batch = None
+        try:
+            all = request.GET["all"]
+        except MultiValueDictKeyError:
+            pass
+
+        try:
+            batch = request.GET["batch"]
+        except MultiValueDictKeyError:
+            pass
+
+        query = Student.objects.all()
+        if batch != None:
+            query = query.filter(batch="" + batch)
+        if all == "False":
+            query = query.exclude(
+                user__in=User.objects.filter(
+                    members__in=Member.objects.all(),
+                )
+            )
+
+        serializer = StudentSerializerTwo(query, many=True)
+        return Response(serializer.data)
+
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+        except Student.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
    
 
 class CoordinatorModelViewSet(ModelViewSet):

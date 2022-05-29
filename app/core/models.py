@@ -195,29 +195,31 @@ class Voter(models.Model):
     user_id = models.ForeignKey(User, related_name="voters", on_delete=models.CASCADE)
     project_id = models.ForeignKey(ProjectTitle, related_name="projects", on_delete=models.CASCADE)
 ###############################Chat################################################
-class Contact(models.Model):
-    user = models.ForeignKey(User, related_name='friends', on_delete=models.CASCADE)
-    friends = models.ManyToManyField('self', blank=True)
+# class Contact(models.Model):
+#     user = models.ForeignKey(User, related_name='friends', on_delete=models.CASCADE)
+#     friends = models.ManyToManyField('self', blank=True)
 
-    def __str__(self):
-        return self.user.username
+#     def __str__(self):
+#         return self.user.username
 
 
 class Message(models.Model):
-    contact = models.ForeignKey(Contact, related_name='messages', on_delete=models.CASCADE)
+    username = models.CharField(max_length=255)
+    room = models.CharField(max_length=255)
     content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-
+    created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
-        return self.contact.user.username
+        return self.username
+    class Meta:
+        ordering = ('created_at',)
 
 
-class Chat(models.Model):
-    participants = models.ManyToManyField(Contact, related_name='chats', blank=True)
-    messages = models.ManyToManyField(Message, blank=True)
+# class Chat(models.Model):
+#     participants = models.ManyToManyField(Contact, related_name='chats', blank=True)
+#     messages = models.ManyToManyField(Message, blank=True)
 
-    def __str__(self):
-        return "{}".format(self.pk)
+#     def __str__(self):
+#         return "{}".format(self.pk)
 
 
 class CountModel(models.Model):

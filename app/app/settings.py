@@ -17,18 +17,19 @@ SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
 DEBUG = True
 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm.herokuapp.com",'10.5.85.106']
-ALLOWED_HOSTS = ['10.5.85.147','10.5.216.116','localhost','127.0.0.1','sfpm.herokuapp.com']
+ALLOWED_HOSTS = ['10.5.216.116','10.5.85.181','10.5.216.116','localhost','127.0.0.1','sfpm.herokuapp.com']
 
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
+    "channels_redis",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # 'whitenoise.runserver_nostatic'
     "rest_framework",
     "corsheaders",
     "rest_framework.authtoken",
@@ -37,8 +38,7 @@ INSTALLED_APPS = [
     "core",
     'drf_yasg',
     "users",
-    "chatrooms",
-    "channels",
+    "chat",
     "groups",
     "evaluations",
     "submission_types",
@@ -75,29 +75,32 @@ TEMPLATES = [
         },
     }
 ]
-
-# WSGI_APPLICATION = "app.wsgi.application"
-ASGI_APPLICATION = "app.routing.application"
+WSGI_APPLICATION = 'app.wsgi.application'
+ASGI_APPLICATION = 'app.routing.application'
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-        },
-    },
-}
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-       'LOCATION': 'redis://localhost:6379/0',
+            'hosts': [('127.0.0.1',6379)],
+        }
     }
 }
+# redis ://default:erJ4P8LG8Ht5GmlIh1MPbtkHICoHPe4j@redis-13761.c10.us-east-1-4.ec2.cloud.redislabs.com:13761
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
-}
+
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+#        'LOCATION': 'redis://localhost:6379/0',
+#     }
+# }
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer"
+#     }
+# }
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
@@ -176,21 +179,26 @@ REST_FRAMEWORK = {
 }
 DJANGO_SETTINGS_MODULE= 'app.settings'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_SSL=True
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_HOST_USER = 'yidegaait2010@gmail.com'
+# EMAIL_HOST_PASSWORD = 'juiryqrxhsywnmpi' #past the key or password app here
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = False
+# DEFAULT_FROM_EMAIL = 'yidegaait2010@gmail.com'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'yidegaait2010@gmail.com'
-EMAIL_HOST_PASSWORD = 'wdivhgmrvjpqqieo' #past the key or password app here
+EMAIL_HOST_USER = 'alefewyimer2@gmail.com'
+EMAIL_HOST_PASSWORD = 'bfbgnezhdpspowzx' #past the key or password app here
 EMAIL_PORT = 587
-EMAIL_USE_TLS = False
-DEFAULT_FROM_EMAIL = 'yidegaait2010@gmail.com'
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'alefewyimer2@gmail.com'
+
 # Celery properties
 # CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
-CELERY_BROKER_URL = 'amqp://localhost'
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
 
 CELERY_RESULT_BACKEND = 'django-db'
 REDIS_URL='redis://localhost:6379/0'
-
-
 AUTH_USER_MODEL = "core.User"
 ACCOUNT_UNIQUE_EMAIL = True
 

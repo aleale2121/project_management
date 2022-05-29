@@ -48,18 +48,10 @@ class TopProjectViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         print("creating ...")
         form_data = request.data
-        global user_obj
         global project_obj
         global batch_obj
         global title_obj
         global group_obj
-        usr=self.request.user.id
-        print("user id =>",usr)
-        try:
-            user_obj = User.objects.get(id=int(usr))
-        except:
-            res = error_response(request, MODEL_RECORD_NOT_FOUND, "User")
-            return Response(res, content_type="application/json")
         try:
             batch_obj = Batch.objects.get(name=form_data["batch"])
         except:
@@ -75,7 +67,6 @@ class TopProjectViewSet(viewsets.ModelViewSet):
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Title")
             return Response(res, content_type="application/json")
-
         
         project_obj = TopProject.objects.create(
             group=group_obj,

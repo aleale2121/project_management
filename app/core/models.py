@@ -1,4 +1,6 @@
-from statistics import mode
+import os
+from tokenize import group
+import uuid
 
 from django.conf import settings
 from django.contrib.auth.models import (
@@ -28,6 +30,12 @@ class Batch(models.Model):
 
     def __str__(self):
         return self.name
+
+
+def submission_file_path(instace, filename):
+    ext = filename.split(".")[-1]
+    filename = f"{uuid.uuid4}.{ext}"
+    return os.path.join("uploads/recipe/", filename)
 
 
 class UserManager(BaseUserManager):
@@ -145,6 +153,19 @@ class SubmissionDeadLine(models.Model):
     class Meta:
         unique_together = ["name", "batch"]
         db_table = "submission_dead_lines"
+
+
+class Submission(models.Model):
+    group = models.ForeignKey(Group, related_name="submission_group", on_delete=models.CASCADE, null=True)
+    submissionType = models.ForeignKey(
+        SubmissionType, on_delete=models.CASCADE, related_name="submission_submission_type"
+    )
+    file = models.FileField(
+        null=True,
+        upload_to=submission_file_path
+    )
+    class Meta:
+        unique_together=["group","submissionType"]
 
 
 class StudentEvaluation(models.Model):

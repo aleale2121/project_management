@@ -1,6 +1,9 @@
-from rest_framework.permissions import SAFE_METHODS, BasePermission
+from crypt import methods
 
-from core.models import Batch, Coordinator, Member
+from rest_framework.permissions import SAFE_METHODS, BasePermission
+from rest_framework.response import Response
+
+from core.models import Batch, Coordinator, Group, Member, Submission
 
 
 class IsReadOnly(BasePermission):
@@ -73,7 +76,6 @@ class IsCoordinatorOrReadOnly(BasePermission):
             active_batch = Batch.objects.get(is_active=True)
         except Batch.DoesNotExist:
             pass
-
         coordinator_history = None
         is_coordinator = False
 
@@ -130,6 +132,7 @@ class IsCoordinatorOrStudentReadOnly(BasePermission):
             and is_coordinator
         )
 
+
 class PermissionPolicyMixin:
     def check_permissions(self, request):
         try:
@@ -137,11 +140,7 @@ class PermissionPolicyMixin:
         except AttributeError:
             handler = None
 
-        if (
-            handler
-            and self.permission_classes_per_method
-            and self.permission_classes_per_method.get(handler.__name__)
-        ):
+        if handler and self.permission_classes_per_method and self.permission_classes_per_method.get(handler.__name__):
             self.permission_classes = self.permission_classes_per_method.get(handler.__name__)
 
         super().check_permissions(request)

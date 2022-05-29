@@ -34,8 +34,8 @@ class Batch(models.Model):
 
 def submission_file_path(instace, filename):
     ext = filename.split(".")[-1]
-    filename = f"{uuid.uuid4}.{ext}"
-    return os.path.join("uploads/recipe/", filename)
+    filename = f"{uuid.uuid4()}.{ext}"
+    return os.path.join("uploads/submissions/", filename)
 
 
 class UserManager(BaseUserManager):

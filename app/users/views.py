@@ -100,10 +100,10 @@ class CreateTokenView(ObtainAuthToken):
             try:
                 advisor_to = ReadGroupSerializer(
                     Group.objects.filter(batch=active_batch).filter(advisors__advisor__exact=user), many=True
-                )
+                ).data
                 examiner_to = ReadGroupSerializer(
                     Group.objects.filter(batch=active_batch).filter(examiners__examiner__exact=user), many=True
-                )
+                ).data
 
             except Batch.DoesNotExist:
                 pass
@@ -117,8 +117,8 @@ class CreateTokenView(ObtainAuthToken):
                 "is_coordinator": is_coordinator,
                 "is_student": user.is_student,
                 "group": joinedGroup,
-                "advisor_to": advisor_to.data,
-                "examiner_to": examiner_to.data,
+                "advisor_to": advisor_to,
+                "examiner_to": examiner_to,
             }
         )
 

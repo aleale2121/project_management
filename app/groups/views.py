@@ -32,6 +32,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
+from django.conf import settings
 
 from groups.serializers import (
     GroupSerializer,
@@ -308,6 +309,7 @@ class ProjectTitleModelViewSet(ModelViewSet):
         return WriteProjectTitleSerializer
 
     def list(self, request, group_pk=None):
+        print("media root", settings.MEDIA_ROOT)
         queryset = ProjectTitle.objects.filter(group=group_pk)
         serializer = ReadProjectTitleSerializer(queryset, many=True)
         return Response(serializer.data)

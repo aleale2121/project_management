@@ -1,26 +1,16 @@
 import csv
-import json
 
 # from dynamic_preferences.registries import global_preferences_registry
 from constants.constants import (
-    MODEL_CREATION_FAILED,
+    MODEL_ALREADY_EXIST,
     MODEL_DELETE_FAILED,
     MODEL_RECORD_NOT_FOUND,
     MODEL_UPDATE_FAILED,
 )
-from core.models import (
-    Advisor,
-    Batch,
-    Coordinator,
-    CountModel,
-    Group,
-    Member,
-    Staff,
-    Student,
-    User,
-)
+from core.models import Batch, Coordinator, Group, Member, Staff, Student, User
 from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff
 from django.contrib.auth.base_user import BaseUserManager
+from django.core import mail
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.core.mail import send_mail, send_mass_mail
@@ -265,7 +255,6 @@ class StudentRegistrationModelViewSet(ModelViewSet):
         batch = get_object_or_404(Batch, pk=batch)
         if not batch.is_active:
             return Response("batch is inactive", status=status.HTTP_400_BAD_REQUEST)
-        print(request)
         file = request.FILES["file"]
 
         content = file.read()
@@ -278,46 +267,70 @@ class StudentRegistrationModelViewSet(ModelViewSet):
         next(reader)
 
         student_list = []
-        ctx_list = []
+        username_list = []
+        email_list = []
+        user_list = []
+        from_email = "alefewyimer2@gmail.com"
+        email_tuple = tuple()
+        email_message_list = []
+        subject = ("SiTE Project Repository Password",)
+
+        batch_model = Batch(name=batch)
         for id_, row in enumerate(reader):
             (username, email, firstname, lastname) = row
             user = User(username=username, email=email)
-            batch_model = Batch(name=batch)
-            password = "password"
+            password = "password1"
             # password = BaseUserManager().make_random_password()
             user.is_student = True
             user.set_password(password)
-            user.save()
+            user_list.append(user)
+            username_list.append(username)
+            email_list.append(email)
+            # user.save()
 
+            msg = "Your SiTE Project Repository password is " + password
+
+            # email_tuple = email_tuple + ((subject, msg, from_email, [email]),)
+            email_message_list.append(
+                mail.EmailMessage(
+                    subject,
+                    msg,
+                    from_email,
+                    [email],
+                ),
+            )
+
+        users_by_username = User.objects.filter(username__in=[usr.username for usr in user_list])
+        if len(users_by_username) > 0:
+            res = error_response(request, MODEL_ALREADY_EXIST, "One or more username in Student")
+            return Response(res, content_type="application/json")
+
+        users_by_email = User.objects.filter(email__in=[usr.email for usr in user_list])
+        if len(users_by_email) > 0:
+            res = error_response(request, MODEL_ALREADY_EXIST, "One or more email in Student")
+            return Response(res, content_type="application/json")
+        for usr in user_list:
+            usr_saved = usr
+            usr_saved.save()
             student_list.append(
                 Student(
-                    user=user,
+                    user=usr,
                     batch=batch_model,
                     first_name=firstname,
                     last_name=lastname,
                 )
             )
-            msg = "Your SiTE Project Repository password is " + password
-            ctx_list.append(
-                {
-                    "username": username,
-                    "first_name": firstname,
-                    "last_name": lastname,
-                    "email": email,
-                    "subject": "SiTE Project Repository Password",
-                    "msg": msg,
-                }
-            )
-
-        from_email = "alefewyimer2@gmail.com"
-        email_tuple = tuple()
-
-        for i in ctx_list:
-            email_tuple = email_tuple + ((i["subject"], i["msg"], from_email, [i["email"]]),)
-
-        fs.delete(tmp_file)
-        email_res = send_mass_mail((email_tuple), fail_silently=False)
         Student.objects.bulk_create(student_list)
+        fs.delete(tmp_file)
+        connection = mail.get_connection()
+        connection.open()
+        try:
+            first_email=email_message_list.pop()
+            first_email.connection=connection
+            connection.send_messages(email_message_list)
+        except IndexError:
+            pass
+        connection.close()
         return Response("Students registered  successfully")
 
 

@@ -1,6 +1,6 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
-from core.models import Batch, Coordinator, Member
+from core.models import Batch, Coordinator, Examiner, Member
 
 
 class IsReadOnly(BasePermission):
@@ -31,6 +31,10 @@ class IsStudentOrReadOnly(BasePermission):
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
+
+class IsExaminer(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and Examiner.objects.filter(user_id=request.user.id).exists())
 
 
 # class IsStudent(BasePermission):

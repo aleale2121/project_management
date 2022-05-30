@@ -54,8 +54,6 @@ class BatchModelViewSet(ModelViewSet):
 
 class CreateTokenView(ObtainAuthToken):
     """Create a new token for user"""
-    serializer_class = AuthTokenSerializer
-    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={"request": request})
@@ -67,6 +65,7 @@ class CreateTokenView(ObtainAuthToken):
             active_batch = Batch.objects.get(is_active=True)
         except Batch.DoesNotExist:
             pass
+
         coordinator_history = None
         is_coordinator = False
 
@@ -92,27 +91,33 @@ class CreateTokenView(ObtainAuthToken):
             try:
                 advisor_to = ReadGroupSerializer(
                     Group.objects.filter(batch=active_batch).filter(advisors__advisor__exact=user), many=True
-                )
+                ).data
                 examiner_to = ReadGroupSerializer(
                     Group.objects.filter(batch=active_batch).filter(examiners__examiner__exact=user), many=True
-                )
+                ).data
 
             except Batch.DoesNotExist:
                 pass
+
         return Response(
-            {"token": token.key,
-                # "user_id": user.pk,
-                # "is_superadmin": user.is_superuser,
-                # "is_staff": user.is_staff,
-                # "is_coordinator": is_coordinator,
-                # "is_student": user.is_student,
-                # "group": joinedGroup,
-                # "advisor_to": advisor_to,  # type: ignore
-                # "examiner_to": examiner_to,  # type: ignore
-            })
-            
-        
-        
+            {
+                "token": token.key,
+                "user_id": user.pk,
+                "is_superadmin": user.is_superuser,
+                "is_staff": user.is_staff,
+                "is_coordinator": is_coordinator,
+                "is_student": user.is_student,
+                "group": joinedGroup,
+                "advisor_to": advisor_to,
+                "examiner_to": examiner_to,
+            }
+        )
+
+    serializer_class = AuthTokenSerializer
+    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
+
+
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
     """Manage the authenticated user"""
@@ -412,15 +417,12 @@ class StudentModelViewSet(ModelViewSet):
     permission_classes = [
         IsAdminOrReadOnly,
     ]
-
-   
     def create(self, request, *args, **kwargs):
         serializer = StudentRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         student = serializer.save()
         student_serialize = StudentSerializerTwo(student)
         data = student_serialize.data
-
         return Response(data)
 
     def update(self, request, *args, **kwargs):
@@ -436,10 +438,6 @@ class StudentModelViewSet(ModelViewSet):
         student_serialize = StudentSerializerTwo(student)
         data = student_serialize.data
         return Response(data)
-
-    
-    
-    
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
             return StudentSerializerTwo
@@ -464,14 +462,11 @@ class StudentModelViewSet(ModelViewSet):
         if all == "False":
             query = query.exclude(
                 user__in=User.objects.filter(
-                    members__in=Member.objects.all(),
+                members__in=Member.objects.all(),
                 )
             )
-
         serializer = StudentSerializerTwo(query, many=True)
         return Response(serializer.data)
-
-
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()

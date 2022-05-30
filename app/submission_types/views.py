@@ -33,7 +33,7 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
             pass
         semister_obj=None
         try:
-            semister_obj=Semister.objects.filter(id=data["semister"]).first()
+            semister_obj=Semister.objects.get(id=data["semister"])
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Semister")
             return Response(res, content_type="application/json")
@@ -61,7 +61,6 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
             except:
                 res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "Semister")
                 return Response(res, content_type="application/json")
-                
         else:
             pass
         

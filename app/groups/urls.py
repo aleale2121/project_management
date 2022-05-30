@@ -19,4 +19,5 @@ urlpatterns = [
     path("check-similarity/<int:pk>/", views.similarity_check, name="check-similarity"),
     path("approve-title/<int:pk>", views.approve_title, name="approve-title"),
     path("reject-title/<int:pk>", views.reject_title, name="reject-title"),
+
 ] 

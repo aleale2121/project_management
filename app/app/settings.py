@@ -1,14 +1,13 @@
 import os
+import dj_database_url  # type: ignore
 from distutils.debug import DEBUG
 from pathlib import Path
-
-import dj_database_url
-import environ
+# import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-environ.Env.read_env(".env")
+# environ.Env.read_env(".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY_DEFAULT = "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*%tu7wd6t90b8"
@@ -16,10 +15,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-# DEBUG = int(os.environ.get("DEBUG", default=0))
-# DEBUG = False
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm.herokuapp.com", "192.168.74.19"]
+# ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm.herokuapp.com",'10.5.85.106']
+ALLOWED_HOSTS = ['10.5.85.147','10.5.216.116','localhost','127.0.0.1','sfpm.herokuapp.com']
 
 # Application definition
 
@@ -34,9 +32,13 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "rest_framework.authtoken",
-    "django_filters",
+    'django_filters',
+    'rest_framework_swagger',
     "core",
+    'drf_yasg',
     "users",
+    "chatrooms",
+    "channels",
     "groups",
     "evaluations",
     "submission_types",
@@ -74,7 +76,28 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = "app.wsgi.application"
+# WSGI_APPLICATION = "app.wsgi.application"
+ASGI_APPLICATION = "app.routing.application"
+# CHANNEL_LAYERS = {
+# 	'default': {
+# 		'BACKEND': 'channels_redis.core.RedisChannelLayer',
+# 		'CONFIG': {
+# 			"hosts": ['redis://redis:6379/0'],
+# 		},
+# 	},
+# }
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+#        'LOCATION': 'redis://localhost:6379/0',
+#     }
+# }
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
@@ -82,10 +105,11 @@ WSGI_APPLICATION = "app.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "HOST": os.environ.get("DB_HOST"),
-        "NAME": os.environ.get("DB_NAME"),
-        "USER": os.environ.get("DB_USER"),
-        "PASSWORD": os.environ.get("DB_PASS"),
+        "HOST": "localhost",
+        "NAME": "app",
+        "USER": "postgres",
+        "PASSWORD": "superuserpassword",
+        'ATOMIC_REQUESTS': True,
     }
 }
 

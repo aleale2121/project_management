@@ -1,4 +1,3 @@
-from datetime import datetime
 from django.utils import timezone
 
 from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND

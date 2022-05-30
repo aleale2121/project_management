@@ -2,7 +2,7 @@ import json
 from core.permissions import IsCoordinatorOrReadOnly
 
 from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
-from core.models import Batch, Examiner, Member, StudentEvaluation, SubmissionDeadLine, SubmissionType
+from core.models import Batch, Examiner, Member, StudentEvaluation, SubmissionDeadLine, SubmissionType, TitleDeadline
 from django.db import transaction
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -104,4 +104,6 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
 class TitleSubmissionDeadLineViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSubmissionDeadLineSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filterset_fields = ["batch"]
     permission_classes=[IsCoordinatorOrReadOnly]
+    queryset = TitleDeadline.objects.all()

@@ -19,7 +19,7 @@ DEBUG = True
 # DEBUG = int(os.environ.get("DEBUG", default=0))
 # DEBUG = False
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm.herokuapp.com"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm.herokuapp.com", "192.168.74.19"]
 
 # Application definition
 
@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "rest_framework.authtoken",
-    'django_filters',
+    "django_filters",
     "core",
     "users",
     "groups",
@@ -122,12 +122,12 @@ USE_TZ = True
 
 # MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-STATIC_URL = '/static/'
-MEDIA_URL = '/media/'
-STATIC_ROOT = '/vol/web/static'
-MEDIA_ROOT = f'{BASE_DIR}/vol/web/media'
+STATIC_URL = "/static/"
+MEDIA_URL = "/media/"
+STATIC_ROOT = "/vol/web/static"
+MEDIA_ROOT = f"{BASE_DIR}/vol/web/media"
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
@@ -147,17 +147,17 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "PAGE_SIZE": 100,
 }
 
 AUTH_USER_MODEL = "core.User"
 ACCOUNT_UNIQUE_EMAIL = True
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'alefewyimer2@gmail.com'
-EMAIL_HOST_PASSWORD = 'bfbgnezhdpspowzx' #past the key or password app here
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST_USER = "alefewyimer2@gmail.com"
+EMAIL_HOST_PASSWORD = "bfbgnezhdpspowzx"  # past the key or password app here
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'alefewyimer2@gmail.com'
+DEFAULT_FROM_EMAIL = "alefewyimer2@gmail.com"

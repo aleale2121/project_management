@@ -1,5 +1,8 @@
 import json
 from tokenize import group
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import SAFE_METHODS
 
 import requests
 from constants.constants import MODEL_RECORD_NOT_FOUND, MODEL_UPDATE_FAILED
@@ -11,6 +14,8 @@ from core.models import (
     Member,
     ProjectTitle,
     Student,
+    TitleDeadline,
+    
     User,
 )
 from core.permissions import (
@@ -309,7 +314,6 @@ class ProjectTitleModelViewSet(ModelViewSet):
         return WriteProjectTitleSerializer
 
     def list(self, request, group_pk=None):
-        print("media root", settings.MEDIA_ROOT)
         queryset = ProjectTitle.objects.filter(group=group_pk)
         serializer = ReadProjectTitleSerializer(queryset, many=True)
         return Response(serializer.data)
@@ -324,6 +328,9 @@ class ProjectTitleModelViewSet(ModelViewSet):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
+        resp= self.check_deadline(request)
+        if resp!=None:
+            return resp
 
         group = get_object_or_404(Group.objects, pk=group_pk)
         title = None
@@ -345,7 +352,6 @@ class ProjectTitleModelViewSet(ModelViewSet):
             pass
         request.data["group"] = group
         response = super(ProjectTitleModelViewSet, self).create(request)
-        print("new title \n")
         data = response.data
 
         return Response(
@@ -358,6 +364,10 @@ class ProjectTitleModelViewSet(ModelViewSet):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
+
+        resp= self.check_deadline(request)
+        if resp!=None:
+            return resp
         group = get_object_or_404(Group.objects, pk=group_pk)
         request.data["group"] = group
         return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)
@@ -366,6 +376,9 @@ class ProjectTitleModelViewSet(ModelViewSet):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
+        resp= self.check_deadline(request)
+        if resp!=None:
+            return resp
         member = get_object_or_404(self.queryset, pk=pk, group__pk=group_pk)
         self.perform_destroy(member)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -386,3 +399,51 @@ class ProjectTitleModelViewSet(ModelViewSet):
             Member.objects.get(group=group, member=request.user)
         except Member.DoesNotExist:
             return Response({"error": "your are not authorized to edit or view the group"})
+    
+    def check_deadline(self, request):
+        if not request.method in SAFE_METHODS:
+            active_batch = None
+            try:
+                active_batch = Batch.objects.get(is_active=True)
+            except Batch.DoesNotExist:
+                return Response(
+                    {"error": "there is no active batch"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if request.method == "POST" or request.method == "UPDATE" or request.method == "PATCH":
+                deadline = None
+                try:
+                    deadline = TitleDeadline.objects.get(batch=active_batch)
+                    now_time = timezone.now()
+
+                    if now_time >= deadline.deadline:
+                        return Response(
+                            {"error": "submission date is closed"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                except TitleDeadline.DoesNotExist:
+
+                    return Response(
+                        {"error": "submission date is not open"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                get_object_or_404(ProjectTitle, id=self.kwargs["pk"])
+                deadline = None
+                try:
+                    deadline = TitleDeadline.objects.get(
+                        batch=active_batch,
+                    )
+                    now_time = timezone.now()
+                    if now_time>= deadline.deadline:
+                        return Response(
+                            {"error": "title submission date is closed"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                except TitleDeadline.DoesNotExist:
+                    return Response(
+                        {"error": "title submission date is not open"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )

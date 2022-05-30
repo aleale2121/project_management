@@ -1,6 +1,6 @@
 import os
-from tokenize import group
 import uuid
+from tokenize import group
 
 from django.conf import settings
 from django.contrib.auth.models import (
@@ -160,12 +160,10 @@ class Submission(models.Model):
     submissionType = models.ForeignKey(
         SubmissionType, on_delete=models.CASCADE, related_name="submission_submission_type"
     )
-    file = models.FileField(
-        null=True,
-        upload_to=submission_file_path
-    )
+    file = models.FileField(null=True, upload_to=submission_file_path)
+
     class Meta:
-        unique_together=["group","submissionType"]
+        unique_together = ["group", "submissionType"]
 
 
 class StudentEvaluation(models.Model):
@@ -233,13 +231,13 @@ class Voter(models.Model):
     project_id = models.ForeignKey(ProjectTitle, related_name="projects", on_delete=models.CASCADE)
 
 
-class TitleSubmissionDeadline(models.Model):
-    batch = models.ForeignKey(Batch, related_name="title_submission_deadline_batch", on_delete=models.CASCADE)
-    deadline = models.DateTimeField(editable=True)
-
-    class Meta:
-        unique_together = ["batch", "deadline"]
 
 
 class CountModel(models.Model):
     count = models.IntegerField()
+
+class TitleDeadline(models.Model):
+    batch = models.ForeignKey(Batch,unique=True, related_name="title_deadline", on_delete=models.CASCADE)
+    deadline = models.DateTimeField(editable=True)
+
+    

@@ -152,8 +152,7 @@ class MemberModelViewSet(viewsets.ModelViewSet):
             pass
         request.data["group"] = group.pk
         request.data["member"] = user.pk
-
-        return super(MemberModelViewSet, self).create(request)
+        return super(ProjectTitleModelViewSet, self).create(request)  # type: ignore
 
     def update(self, request, group_pk=None, *args, **kwargs):
         # response = self.check_membership(request, group_pk)
@@ -161,7 +160,7 @@ class MemberModelViewSet(viewsets.ModelViewSet):
         #     return response
         group = Member.objects.get(id=group_pk)
         request.data["group"] = group.pk
-        return super(MemberModelViewSet, self).update(request, *args, **kwargs)
+        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)  # type: ignore
 
     def list(self, request, group_pk=None):
         queryset = Member.objects.filter(group=group_pk)
@@ -355,6 +354,47 @@ class ProjectTitleModelViewSet(ModelViewSet):
         if self.action in ("list", "retrieve"):
             return ReadProjectTitleSerializer
         return WriteProjectTitleSerializer
+    
+    @api_view(['GET'])
+    def similarity_check(request, pk):
+        title = get_object_or_404(ProjectTitle, pk=pk)
+        allProjects = ProjectTitle.objects.all()
+        filtered = []
+        for prj in allProjects:
+            if prj.id != title.id:
+                filtered.append({"id": prj.id, "description": prj.title_description})
+        payload = {
+            "project": {
+                "id": title.id,
+                "description": title.title_description,
+            },
+            "comparableProjects": filtered,
+        }
+        response = requests.post(
+            "https://sfpm-check-similarity-backend.herokuapp.com/api/check-similarity",
+            data=json.dumps(payload),
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "*/*",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Connection": "keep-alive",
+            },
+        )
+        print("\n similarity \n")
+        checkedProjects = response.json()
+        similarProjects = []
+        for pro in checkedProjects:
+            for fPrj in allProjects:
+                if fPrj.id == pro["id"]:
+                    proDict = model_to_dict(fPrj)
+                    proDict["similarity"] = pro["similarity"]
+                    similarProjects.append(proDict)
+        return Response(
+            {
+                "project_title": model_to_dict(title),
+                "similarProjects": similarProjects,
+            }
+        )
 
     def list(self, request, group_pk=None):
         status_param = self.request.query_params.get("status")
@@ -381,7 +421,7 @@ class ProjectTitleModelViewSet(ModelViewSet):
         if resp != None:
             return resp
 
-        group = get_object_or_404(Group.objects, pk=group_pk)
+        group = get_object_or_404(Group, pk=group_pk)
         title = None
         try:
             title = ProjectTitle.objects.get(group=group, no=request.data["no"])
@@ -400,12 +440,41 @@ class ProjectTitleModelViewSet(ModelViewSet):
         except ProjectTitle.DoesNotExist:
             pass
         request.data["group"] = group
-        response = super(ProjectTitleModelViewSet, self).create(request)
-        data = response.data
+        response= super(ProjectTitleModelViewSet, self).create(request)  # type: ignore
+        print("new title \n")
+        data=response.data
+        # serializer=ReadProjectTitleFromMapSerializer(response.data)
+        newtitle= ProjectTitle(
+            id=data['id'],
+            title_name=data['title_name'],
+            no=data['no'],  
+            title_description=data['title_description'], 
+            status=data['status'], 
+            rejection_reason=data['rejection_reason'], 
+        )
+        print(newtitle)
+        print("new title \n")
 
-        return Response(
-            {
-                "project_title": data,
+        allProjects = ProjectTitle.objects.all()
+        filtered = []
+        for prj in allProjects:
+            if prj.id != newtitle.id:  # type: ignore
+                filtered.append({"id": prj.id, "description": prj.title_description})
+        payload = {
+            "project": {
+                "id": newtitle.id,  # type: ignore
+                "description": newtitle.title_description,
+            },
+            "comparableProjects":filtered
+        }
+        response = requests.post(
+            "https://sfpm-check-similarity-backend.herokuapp.com/api/check-similarity",
+            data=json.dumps(payload),
+            headers={
+                'Content-Type':'application/json',
+                'Accept':'*/*',
+                'Accept-Encoding':'gzip, deflate, br',
+                'Connection':'keep-alive'
             }
         )
 
@@ -419,7 +488,7 @@ class ProjectTitleModelViewSet(ModelViewSet):
             return resp
         group = get_object_or_404(Group.objects, pk=group_pk)
         request.data["group"] = group
-        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)
+        return super(ProjectTitleModelViewSet, self).update(request, *args, **kwargs)  # type: ignore
 
     def destroy(self, request, pk=None, group_pk=None):
         response = self.check_membership(request, group_pk)

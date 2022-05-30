@@ -24,6 +24,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import APIView, ObtainAuthToken
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
+
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 
@@ -53,7 +54,6 @@ class BatchModelViewSet(ModelViewSet):
 
 class CreateTokenView(ObtainAuthToken):
     """Create a new token for user"""
-
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -102,8 +102,7 @@ class CreateTokenView(ObtainAuthToken):
             active_batch_resp=active_batch.name
         
         return Response(
-            {
-                "token": token.key,
+            {"token": token.key,
                 "user_id": user.pk,
                 "is_superadmin": user.is_superuser,
                 "is_staff": user.is_staff,
@@ -333,6 +332,7 @@ class StudentRegistrationModelViewSet(ModelViewSet):
         return Response("Students registered  successfully")
 
 
+        
 class StudentModelViewSet(ModelViewSet):
     filterset_fields = [
         "batch",

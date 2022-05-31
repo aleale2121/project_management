@@ -271,7 +271,6 @@ class StudentRegistrationModelViewSet(ModelViewSet):
         email_list = []
         user_list = []
         from_email = "alefewyimer2@gmail.com"
-        email_tuple = tuple()
         email_message_list = []
         subject = ("SiTE Project Repository Password",)
 
@@ -284,13 +283,9 @@ class StudentRegistrationModelViewSet(ModelViewSet):
             user.is_student = True
             user.set_password(password)
             user_list.append(user)
-            username_list.append(username)
-            email_list.append(email)
-            # user.save()
 
             msg = "Your SiTE Project Repository password is " + password
 
-            # email_tuple = email_tuple + ((subject, msg, from_email, [email]),)
             email_message_list.append(
                 mail.EmailMessage(
                     subject,

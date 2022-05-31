@@ -1,4 +1,5 @@
 import json
+from django.utils import timezone
 from core.permissions import IsCoordinatorOrReadOnly
 
 from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
@@ -23,7 +24,15 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
     permission_classes=[IsCoordinatorOrReadOnly]
     
     def get_queryset(self):
-        deadlines = SubmissionDeadLine.objects.all().order_by("id")
+        current_time = timezone.now()
+        active= self.request.query_params.get('active')
+        deadlines=None
+        if(active =="True"):
+            deadlines = SubmissionDeadLine.objects.filter(dead_line__gt=current_time)
+        elif (active=="False"):
+            deadlines = SubmissionDeadLine.objects.filter(dead_line__lt=current_time)
+        else:
+            deadlines=SubmissionDeadLine.objects.all()
         return deadlines
 
     @transaction.atomic

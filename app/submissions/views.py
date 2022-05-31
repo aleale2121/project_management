@@ -8,7 +8,7 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
-from submissions.serializers import SubmissionsSerializer
+from submissions.serializers import ReadSubmissionSerializer, SubmissionsSerializer
 
 
 class SubmissionViewSet(viewsets.ModelViewSet):
@@ -19,7 +19,6 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         current_time = timezone.now()
         active= self.request.query_params.get('active')
-        group_id= self.request.query_params.get('group')
         submissions_list=None
         if(active =="True"):
             submissions_list = Submission.objects.filter(submissionType__submission_type_deadline__dead_line__gt=current_time)
@@ -27,9 +26,13 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             submissions_list = Submission.objects.filter(submissionType__submission_type_deadline__dead_line__lt=current_time)
         else:
             submissions_list=Submission.objects.all()
-        if(group_id!=None):
-            submissions_list=submissions_list.filter(group=group_id)
         return submissions_list
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return ReadSubmissionSerializer
+        return SubmissionsSerializer
+
     def create(self, request, *args, **kwargs):
         membership_info = self.check_membership(request, request.data["group"])
         if membership_info != None:
@@ -39,12 +42,6 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             return resp
 
         return super().create(request, *args, **kwargs)
-
-    def list(self, request, *args, **kwargs):
-        resp= self.check_deadline(request, *args, **kwargs)
-        if resp!=None:
-            return resp
-        return super().list(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         submission = get_object_or_404(Submission,id=kwargs["pk"])

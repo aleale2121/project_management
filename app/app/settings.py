@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     "core",
     'drf_yasg',
     "users",
-    "chatrooms",
+    "chat",
     "channels",
     "groups",
     "evaluations",

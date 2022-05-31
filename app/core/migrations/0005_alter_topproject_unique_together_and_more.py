@@ -68,19 +68,6 @@ class Migration(migrations.Migration):
             unique_together={('batch', 'group')},
         ),
         migrations.CreateModel(
-            name='Title',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True)),
-                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('updated_at', models.DateTimeField(default=django.utils.timezone.now)),
-            ],
-            options={
-                'db_table': 'titles',
-                'unique_together': {('name',)},
-            },
-        ),
-        migrations.CreateModel(
             name='Semister',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

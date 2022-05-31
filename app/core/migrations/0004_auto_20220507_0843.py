@@ -13,6 +13,21 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.CreateModel(
+            name='ProjectTitle',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('title_name', models.CharField(max_length=200)),
+                ('title_description', models.TextField()),
+                ('no', models.IntegerField(choices=[(1, 'One'), (2, 'Two'), (3, 'Three')])),
+                ('rejection_reason', models.CharField(default=None, max_length=1000)),
+                ('status', models.CharField(choices=[('APPROVED', 'Approved'), ('PENDING', 'Pending'), ('REJECTED', 'Rejected')], max_length=10)),
+                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='project_titles', to='core.group')),
+            ],
+            options={
+                'unique_together': {('group', 'no')},
+            },
+        ),
         migrations.AlterField(
             model_name='member',
             name='member',
@@ -44,6 +59,20 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'student_evalaution',
+            },
+        ),
+        migrations.CreateModel(
+            name='TopProject',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('level', models.IntegerField()),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
+                ('updated_at', models.DateTimeField(default=django.utils.timezone.now)),
+                ('title_name', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.projecttitle')),
+            ],
+            options={
+                'db_table': 'top_projects',
+                'unique_together': {('title_name',)},
             },
         ),
         migrations.CreateModel(

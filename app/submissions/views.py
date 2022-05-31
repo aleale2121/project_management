@@ -16,7 +16,20 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStudentOrReadOnly]
     queryset = Submission.objects.all()
     filterset_fields = ["submissionType", "group"]
-
+    def get_queryset(self):
+        current_time = timezone.now()
+        active= self.request.query_params.get('active')
+        group_id= self.request.query_params.get('group')
+        submissions_list=None
+        if(active =="True"):
+            submissions_list = Submission.objects.filter(submissionType__submission_type_deadline__dead_line__gt=current_time)
+        elif (active=="False"):
+            submissions_list = Submission.objects.filter(submissionType__submission_type_deadline__dead_line__lt=current_time)
+        else:
+            submissions_list=Submission.objects.all()
+        if(group_id!=None):
+            submissions_list=submissions_list.filter(group=group_id)
+        return submissions_list
     def create(self, request, *args, **kwargs):
         membership_info = self.check_membership(request, request.data["group"])
         if membership_info != None:

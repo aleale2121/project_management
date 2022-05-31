@@ -158,11 +158,11 @@ def advisor_groups_view(request, format=None):
             advisor_to = ReadGroupSerializer(
                 Group.objects.filter(batch=active_batch).filter(advisors__advisor__exact=user),
                 many=True,
-            )
+            ).data
 
         except Batch.DoesNotExist:
             pass
-    return Response(((advisor_to.data)))
+    return Response(((advisor_to)))
 
 
 @api_view(["GET"])
@@ -181,11 +181,11 @@ def examiner_groups_view(request, format=None):
             examiner_to = ReadGroupSerializer(
                 Group.objects.filter(batch=active_batch).filter(examiners__examiner__exact=user),
                 many=True,
-            )
+            ).data
 
         except Batch.DoesNotExist:
             pass
-    return Response(((examiner_to.data)))
+    return Response(((examiner_to)))
 
 
 class AdminViewSet(ModelViewSet):

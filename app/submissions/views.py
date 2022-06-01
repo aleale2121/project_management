@@ -8,7 +8,7 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
-from submissions.serializers import ReadSubmissionSerializer, SubmissionsSerializer
+from submissions.serializers import  SubmissionsSerializer
 
 
 class SubmissionViewSet(viewsets.ModelViewSet):
@@ -28,10 +28,6 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             submissions_list=Submission.objects.all()
         return submissions_list
 
-    def get_serializer_class(self):
-        if self.action in ("list", "retrieve"):
-            return ReadSubmissionSerializer
-        return SubmissionsSerializer
 
     def create(self, request, *args, **kwargs):
         membership_info = self.check_membership(request, request.data["group"])

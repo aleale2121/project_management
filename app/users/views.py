@@ -170,7 +170,7 @@ def advisor_groups_view(request, format=None):
 
         except Batch.DoesNotExist:
             pass
-    return Response(((advisor_to)))
+    return Response(((advisor_to.data)))
 
 
 @api_view(["GET"])
@@ -193,7 +193,8 @@ def examiner_groups_view(request, format=None):
 
         except Batch.DoesNotExist:
             pass
-    return Response(((examiner_to)))
+        
+    return Response(examiner_to.data)
 
 
 class AdminViewSet(ModelViewSet):
@@ -307,22 +308,17 @@ class StudentRegistrationModelViewSet(ModelViewSet):
                 }
             )
 
-        from_email = "yidegaait2010@gmail.com"
+        from_email = "alefewyimer2@gmail.com"
         email_tuple = tuple()
 
         for i in ctx_list:
             email_tuple = email_tuple + ((i["subject"], i["msg"], from_email, [i["email"]]),)
 
         fs.delete(tmp_file)
-        # email_res = send_mass_mail((email_tuple), fail_silently=False)
         try:
             print("Students Creating ...")
             Student.objects.bulk_create(student_list)
-            message={
-                "type":"bulk",
-                "data":email_tuple
-            }
-            tasks.publish_message(message)
+            send_mass_mail((email_tuple), fail_silently=False)
             return Response({"message":"Students registered  successfully"})
         except Exception as e:
             print("error while sending message ",e)
@@ -426,7 +422,7 @@ class StudentModelViewSet(ModelViewSet):
             usr = User.objects.get(id=student_id)
             subject = "Dear " + form_data["first_name"] + " " + form_data["last_name"]
             message = password + " is your new passsword!"
-            fromMail = "yidegaait2010@gmail.com"
+            fromMail = "alefewyimer2@gmail.com"
             toArr = [usr.email]
             student_obj = Student.objects.create(
                 user=User.objects.get(id=student_id),
@@ -478,7 +474,7 @@ class StudentModelViewSet(ModelViewSet):
             user_obj.set_password(password)  # type: ignore
             user_obj.save(update_fields=["password"])  # type: ignore
             body = password + " is your new password."
-            from_email = "yidegaait2010@gmail.com"
+            from_email = "alefewyimer2@gmail.com"
             to_email = form_data["email"]
             subject = "Email and Passsword Reset"
             toArr = [to_email]

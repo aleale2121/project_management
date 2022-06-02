@@ -237,11 +237,32 @@ class CountModel(models.Model):
     count = models.IntegerField()
 
 class TitleDeadline(models.Model):
-    batch = models.ForeignKey(Batch,unique=True, related_name="title_deadline", on_delete=models.CASCADE)
+    batch = models.ForeignKey(Batch,unique=True ,related_name="title_deadline", on_delete=models.CASCADE)
     deadline = models.DateTimeField(editable=True)
-
     
 ###############################Chat################################################
+# class Chat(models.Model):
+#     name = models.CharField(max_length=100)
+#     friends = models.ManyToManyField(User, related_name='friends')
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     class Meta:
+#         db_table = "chats"
+#         unique_together = ['name']
+         
+#     def __str__(self):
+#         return self.name
+
+# class Message(models.Model):
+#     content = models.CharField(max_length=1000)
+#     chat = models.ForeignKey(Chat, related_name='messages', on_delete=models.CASCADE)
+#     user = models.ForeignKey(User, related_name='messages', on_delete=models.CASCADE)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     class Meta:
+#         db_table = "messages"
+
+#     def __str__(self):
+#         return self.contact.user.username
+
 class Contact(models.Model):
     user = models.ForeignKey(User, related_name='friends', on_delete=models.CASCADE)
     friends = models.ManyToManyField('self', blank=True)
@@ -265,3 +286,4 @@ class Chat(models.Model):
 
     def __str__(self):
         return "{}".format(self.pk)
+

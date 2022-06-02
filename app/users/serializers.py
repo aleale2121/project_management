@@ -192,7 +192,7 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
             first_name=self.validated_data["first_name"],
             last_name=self.validated_data["last_name"],
         )
-        from_email = "yidegaait2010@gmail.com"
+        from_email = "alefewyimer2@gmail.com"
         send_mail(
                 "SiTE Project Repository Password",
                 password,
@@ -227,7 +227,8 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
             first_name=self.validated_data["first_name"],
             last_name=self.validated_data["last_name"],
         )
-        from_email = "yidegaait2010@gmail.com"
+        from_email = "alefewyimer2@gmail.com"
+        
         send_mail(
                 "SiTE Project Repository Password",
                 password,

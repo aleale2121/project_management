@@ -19,19 +19,6 @@ class Migration(migrations.Migration):
                 ('count', models.IntegerField()),
             ],
         ),
-        migrations.CreateModel(
-            name='Message',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('username', models.CharField(max_length=255)),
-                ('room', models.CharField(max_length=255)),
-                ('content', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-            ],
-            options={
-                'ordering': ('created_at',),
-            },
-        ),
         migrations.AlterUniqueTogether(
             name='topproject',
             unique_together=set(),

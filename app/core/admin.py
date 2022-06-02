@@ -32,4 +32,8 @@ admin.site.register(models.Batch)
 admin.site.register(models.Group)
 admin.site.register(models.Member)
 admin.site.register(models.Examiner)
+admin.site.register(models.Chat)
+admin.site.register(models.Contact)
+admin.site.register(models.Message)
+
 

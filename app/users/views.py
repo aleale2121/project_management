@@ -165,7 +165,7 @@ def advisor_groups_view(request, format=None):
 
         except Batch.DoesNotExist:
             pass
-    return Response(((advisor_to)))
+    return Response(((advisor_to.data)))
 
 
 @api_view(["GET"])
@@ -188,7 +188,8 @@ def examiner_groups_view(request, format=None):
 
         except Batch.DoesNotExist:
             pass
-    return Response(((examiner_to)))
+        
+    return Response(examiner_to.data)
 
 
 class AdminViewSet(ModelViewSet):
@@ -318,6 +319,7 @@ class StudentRegistrationModelViewSet(ModelViewSet):
                     last_name=lastname,
                 )
             )
+<<<<<<< HEAD
         Student.objects.bulk_create(student_list)
         fs.delete(tmp_file)
         connection = mail.get_connection()
@@ -330,6 +332,35 @@ class StudentRegistrationModelViewSet(ModelViewSet):
             pass
         connection.close()
         return Response("Students registered  successfully")
+=======
+            msg = "Your SiTE Project Repository password is " + password
+            ctx_list.append(
+                {
+                    "username": username,
+                    "first_name": firstname,
+                    "last_name": lastname,
+                    "email": email,
+                    "subject": "SiTE Project Repository Password",
+                    "msg": msg,
+                }
+            )
+
+        from_email = "alefewyimer2@gmail.com"
+        email_tuple = tuple()
+
+        for i in ctx_list:
+            email_tuple = email_tuple + ((i["subject"], i["msg"], from_email, [i["email"]]),)
+
+        fs.delete(tmp_file)
+        try:
+            print("Students Creating ...")
+            Student.objects.bulk_create(student_list)
+            send_mass_mail((email_tuple), fail_silently=False)
+            return Response({"message":"Students registered  successfully"})
+        except Exception as e:
+            print("error while sending message ",e)
+            return Response({ "message":"Error Has Occured while registering students!"})
+>>>>>>> 9ff718a ( add chat)
 
 
         
@@ -429,7 +460,7 @@ class StudentModelViewSet(ModelViewSet):
             usr = User.objects.get(id=student_id)
             subject = "Dear " + form_data["first_name"] + " " + form_data["last_name"]
             message = password + " is your new passsword!"
-            fromMail = "yidegaait2010@gmail.com"
+            fromMail = "alefewyimer2@gmail.com"
             toArr = [usr.email]
             student_obj = Student.objects.create(
                 user=User.objects.get(id=student_id),
@@ -481,7 +512,7 @@ class StudentModelViewSet(ModelViewSet):
             user_obj.set_password(password)  # type: ignore
             user_obj.save(update_fields=["password"])  # type: ignore
             body = password + " is your new password."
-            from_email = "yidegaait2010@gmail.com"
+            from_email = "alefewyimer2@gmail.com"
             to_email = form_data["email"]
             subject = "Email and Passsword Reset"
             toArr = [to_email]

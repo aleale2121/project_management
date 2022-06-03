@@ -10,7 +10,7 @@ from django.utils import timezone
 class SubmissionDeadLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubmissionDeadLine
-        fields = ["id", "name", "batch", "dead_line"]
+        fields = ["id", "name", "batch", "dead_line","status"]
         depth = 1
 
 

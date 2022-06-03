@@ -149,6 +149,8 @@ class SubmissionDeadLine(models.Model):
     name = models.ForeignKey(SubmissionType, on_delete=models.CASCADE, related_name="submission_type_deadline")
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="submission_deadline_batch")
     dead_line = models.DateTimeField(default=now, editable=True)
+    status = models.BooleanField(default=False)
+
 
     class Meta:
         unique_together = ["name", "batch"]

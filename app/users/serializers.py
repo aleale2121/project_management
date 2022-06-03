@@ -229,7 +229,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         )
         from_email = "alefewyimer2@gmail.com"
         
-        send_mail(
+        send_mail( 
                 "SiTE Project Repository Password",
                 password,
                 from_email,

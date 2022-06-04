@@ -37,6 +37,12 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Semister")
             return Response(res, content_type="application/json")
+        if data.get("max_mark") and float(data.get("max_mark") )!=float(0):
+            pass
+        else:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "Semister")
+            res["message"]="Mark value is not valid ,please try again."
+            return Response(res, content_type="application/json")
         new_sub_type_obj = SubmissionType.objects.create(name=data["name"],semister=semister_obj,max_mark=data["max_mark"])
         serializer = SubmissionTypeSerializer(new_sub_type_obj)
         data = success_response(serializer.data)
@@ -48,8 +54,14 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
         pk = kwargs["pk"]
         if pk:
             pk = str(pk)
-        sub__type = SubmissionType.objects.get(name=pk)
-        if data.get("max_mark"):
+        sub__type=None
+        try:
+            sub__type = SubmissionType.objects.get(name=pk)
+        except:
+            res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "SubmissionType")
+            return Response(res, content_type="application/json")
+        
+        if data.get("max_mark") and float(data.get("max_mark") )!=float(0):
             sub__type.max_mark = data["max_mark"]
         else:
             pass
@@ -61,7 +73,6 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
             except:
                 res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "Semister")
                 return Response(res, content_type="application/json")
-                
         else:
             pass
         

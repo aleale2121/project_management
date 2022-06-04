@@ -16,6 +16,7 @@ class ChatSerializer(serializers.ModelSerializer):
         model = Chat
         fields = ('id', 'messages', 'participants')
         read_only = ('id')
+        depth=2
 
     def create(self, validated_data):
         print(validated_data)
@@ -27,13 +28,3 @@ class ChatSerializer(serializers.ModelSerializer):
             chat.participants.add(contact)
         chat.save()
         return chat
-
-
-# do in python shell to see how to serialize data
-
-# from chat.models import Chat
-# from chat.api.serializers import ChatSerializer
-# chat = Chat.objects.get(id=1)
-# s = ChatSerializer(instance=chat)
-# s
-# s.data

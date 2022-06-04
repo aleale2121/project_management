@@ -2,7 +2,7 @@ import json
 from urllib.request import proxy_bypass
 
 from constants.constants import FORBIDDEN_REQUEST_FOUND, MODEL_ALREADY_EXIST, MODEL_CREATION_FAILED, MODEL_RECORD_NOT_FOUND
-from core.models import Examiner, Member, StudentEvaluation, SubmissionType
+from core.models import Examiner, Member, StudentEvaluation, SubmissionType,User
 from django.db import transaction
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -74,30 +74,39 @@ class StudentEvaluaionViewSet(viewsets.ModelViewSet):
         evaluation_data = request.data
         global submission_type_obj
         global member_obj
-        global student_obj
         global examiner_obj
         global new_student_obj
-        for data in evaluation_data:
+    
+        
+        try:
+            submission_type_obj = SubmissionType.objects.get(name=evaluation_data["submission_type"])
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "SubmissionType")
+            return Response(res, content_type="application/json")
+        try:
+            usr=self.request.user
+            user=User.objects.get(username=usr)
+            examiner_obj = Examiner.objects.get(examiner=user)
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "Examiner")
+            res["message"]="Examiner has no valid permission to evaluate this group."
+            return Response(res, content_type="application/json")
+        print("=======================================")
+        
+        for data in evaluation_data['students_mark']:
+            global student_obj
+            print("=======================================")
             try:
                 member_obj = Member.objects.get(id=data["member"])
             except:
                 res = error_response(request, MODEL_RECORD_NOT_FOUND, "Member")
-                return Response(res, content_type="application/json")
-            try:
-                submission_type_obj = SubmissionType.objects.get(name=data["submission_type"])
-            except:
-                res = error_response(request, MODEL_RECORD_NOT_FOUND, "SubmissionType")
-                return Response(res, content_type="application/json")
-            try:
-                examiner_obj = Examiner.objects.get(id=data["examiner"])
-            except:
-                res = error_response(request, MODEL_RECORD_NOT_FOUND, "Examiner")
                 return Response(res, content_type="application/json")
             if (data["mark"]>=0 and data["mark"]<=submission_type_obj.max_mark):
                 pass
             else:
                 res = error_response(request, FORBIDDEN_REQUEST_FOUND, "StudentEvalaution")
                 return Response(res, content_type="application/json")
+
             count = StudentEvaluation.objects.filter(
                 submission_type=submission_type_obj,
                  examiner=examiner_obj, 
@@ -109,18 +118,21 @@ class StudentEvaluaionViewSet(viewsets.ModelViewSet):
                 return Response(res, content_type="application/json")
             else:
                 pass
-            print(member_obj.group.id," <=> ",examiner_obj.group.id)
+            # print(member_obj.group.id," <=> ",examiner_obj.group.id)
             if(member_obj.group.id!=examiner_obj.group.id):
                 res = error_response(request, MODEL_CREATION_FAILED, "Examiner")
                 return Response(res, content_type="application/json")
+            
+            
             
             new_student_obj = StudentEvaluation.objects.create(
                 submission_type=submission_type_obj,
                 examiner=examiner_obj,
                 member=member_obj,
                 mark=data["mark"],
-                comment=data["comment"],
+                comment=evaluation_data["comment"],
             )
+            
         serializer = StudentEvaluationSerializer(new_student_obj)
         data = success_response(serializer.data)
         return Response((data))

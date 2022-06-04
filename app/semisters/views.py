@@ -1,9 +1,9 @@
 from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
 from core.models import Semister
 from django.db import transaction
-from django_filters.rest_framework import DjangoFilterBackend
 from pkg.util import error_response, success_response
 from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 

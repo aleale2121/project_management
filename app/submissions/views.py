@@ -1,14 +1,14 @@
-from django.utils import timezone
-
+from tokenize import group
 from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
 from core.models import Batch, Group, Member, Student, Submission, SubmissionDeadLine
 from core.permissions import IsStudentOrReadOnly
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
-from submissions.serializers import  SubmissionsSerializer
+from submissions.serializers import SubmissionsSerializer
 
 
 class SubmissionViewSet(viewsets.ModelViewSet):
@@ -16,46 +16,57 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStudentOrReadOnly]
     queryset = Submission.objects.all()
     filterset_fields = ["submissionType", "group"]
+
     def get_queryset(self):
         current_time = timezone.now()
-        active= self.request.query_params.get('active')
-        submissions_list=None
-        if(active =="True"):
-            submissions_list = Submission.objects.filter(submissionType__submission_type_deadline__dead_line__gt=current_time)
-        elif (active=="False"):
-            submissions_list = Submission.objects.filter(submissionType__submission_type_deadline__dead_line__lt=current_time)
+        active = self.request.query_params.get("active")
+        batch = self.request.query_params.get("batch")
+        submissions_list = None
+        if active == "True":
+            submissions_list = Submission.objects.filter(
+                submissionType__submission_type_deadline__dead_line__gt=current_time,
+            )
+        elif active == "False":
+            submissions_list = Submission.objects.filter(
+                submissionType__submission_type_deadline__dead_line__lt=current_time,
+            )
         else:
-            submissions_list=Submission.objects.all()
+            submissions_list = Submission.objects.all()
+        
+        if(batch!=None):
+            submissions_list=submissions_list.filter(
+                group__batch__exact=batch
+            )
+            
         return submissions_list
-
 
     def create(self, request, *args, **kwargs):
         membership_info = self.check_membership(request, request.data["group"])
         if membership_info != None:
             return membership_info
-        resp= self.check_deadline(request, *args, **kwargs)
-        if resp!=None:
+        resp = self.check_deadline(request, *args, **kwargs)
+        if resp != None:
             return resp
 
         return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        submission = get_object_or_404(Submission,id=kwargs["pk"])
+        submission = get_object_or_404(Submission, id=kwargs["pk"])
         membership_info = self.check_membership(request, submission.group.pk)
         if membership_info != None:
             return membership_info
-        resp= self.check_deadline(request, *args, **kwargs)
-        if resp!=None:
+        resp = self.check_deadline(request, *args, **kwargs)
+        if resp != None:
             return resp
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        submission = get_object_or_404(Submission,id=kwargs["pk"])
+        submission = get_object_or_404(Submission, id=kwargs["pk"])
         membership_info = self.check_membership(request, submission.group.pk)
         if membership_info != None:
             return membership_info
-        resp= self.check_deadline(request, *args, **kwargs)
-        if resp!=None:
+        resp = self.check_deadline(request, *args, **kwargs)
+        if resp != None:
             return resp
         instance = self.get_object()
         self.perform_destroy(instance)
@@ -76,6 +87,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             member = Member.objects.get(group=group, member=request.user)
         except Member.DoesNotExist:
             return Response({"error": "your are not authorized to edit the group"})
+
     def check_deadline(self, request, *args, **kwargs):
         if not request.method in SAFE_METHODS:
             print("1****hello")
@@ -115,7 +127,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                         batch=active_batch,
                     )
                     now_time = timezone.now()
-                    if now_time>= deadline.dead_line:
+                    if now_time >= deadline.dead_line:
                         return Response(
                             {"error": "submission date is closed"},
                             status=status.HTTP_400_BAD_REQUEST,

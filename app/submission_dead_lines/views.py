@@ -6,6 +6,7 @@ from core.models import Batch, Examiner, Member, StudentEvaluation, SubmissionDe
 from django.db import transaction
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils import timezone
 from pkg.util import error_response, success_response
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -21,13 +22,25 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
     ordering_fields = ["name", "batch", "dead_line"]
     search_fields = ["name", "batch", "dead_line"]
     filter_fields = ["name", "batch", "dead_line"]
-    # permission_classes=[IsCoordinatorOrReadOnly]
+    permission_classes=[IsCoordinatorOrReadOnly]
+    
+
     __UTC = pytz.utc
     __current_date=datetime.now(__UTC)
 
     def get_queryset(self):
-        deadlines = SubmissionDeadLine.objects.all().order_by("id")
+        print("**********************")
+        current_time = timezone.now()
+        active= self.request.query_params.get('active')
+        deadlines=None
+        if(active =="True"):
+            deadlines = SubmissionDeadLine.objects.filter(dead_line__gt=current_time)
+        elif (active=="False"):
+            deadlines = SubmissionDeadLine.objects.filter(dead_line__lt=current_time)
+        else:
+            deadlines=SubmissionDeadLine.objects.all()
         return deadlines
+
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):

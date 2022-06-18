@@ -34,6 +34,7 @@ admin.site.register(models.Member)
 admin.site.register(models.Examiner)
 admin.site.register(models.Chat)
 admin.site.register(models.Contact)
-admin.site.register(models.Message)
+admin.site.register(models.Evaluation)
+admin.site.register(models.Mark)
 
 

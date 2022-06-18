@@ -13,7 +13,9 @@ class SubmissionDeadLineSerializer(serializers.ModelSerializer):
 
 
 class TitleSubmissionDeadLineSerializer(serializers.ModelSerializer):
-    batch = serializers.SlugField(
+    batch = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=Batch.objects.all(),
         validators=[UniqueValidator(queryset=TitleDeadline.objects.all())]
     )
     deadline=serializers.DateTimeField()
@@ -21,3 +23,5 @@ class TitleSubmissionDeadLineSerializer(serializers.ModelSerializer):
         model = TitleDeadline
         fields = ["id", "batch", "deadline"]
         depth = 1
+
+

@@ -171,16 +171,34 @@ class Submission(models.Model):
 class StudentEvaluation(models.Model):
     class Meta:
         db_table = "student_evalaution"
-
+   
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="member_student")
-    submission_type = models.ForeignKey(
-        SubmissionType, null=True, on_delete=models.CASCADE, related_name="student_evaluation"
-    )
+    submission_type = models.ForeignKey(SubmissionType, null=True, on_delete=models.CASCADE, related_name="student_evaluation")
     examiner = models.ForeignKey(Examiner, on_delete=models.CASCADE, related_name="student_evaluation")
     comment = models.CharField(null=True, max_length=255)
     mark = models.FloatField(null=True)
     created_at = models.DateTimeField(default=now, editable=True)
     updated_at = models.DateTimeField(default=now, editable=True)
+
+
+class Mark(models.Model):
+    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name="evaluations")
+    mark = models.FloatField(null=True)
+    class Meta:
+        db_table = "marks"
+    
+class Evaluation(models.Model):
+    class Meta:
+        db_table = "evaluations"
+    group = models.ForeignKey(Group, related_name="evaluation_group", on_delete=models.CASCADE, null=True)
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="evaluation_batch")
+    submission_type = models.ForeignKey(SubmissionType, null=True, on_delete=models.CASCADE, related_name="evaluations")
+    examiner = models.ForeignKey(Examiner, on_delete=models.CASCADE, related_name="evaluations")
+    comment = models.CharField(null=True, max_length=255)
+    marks = models.ManyToManyField(Mark,related_name="evaluations")
+    created_at = models.DateTimeField(default=now, editable=True)
+    updated_at = models.DateTimeField(default=now, editable=True)
+    
 
 
 class ProjectTitle(models.Model):
@@ -241,29 +259,6 @@ class CountModel(models.Model):
 class TitleDeadline(models.Model):
     batch = models.ForeignKey(Batch,unique=True ,related_name="title_deadline", on_delete=models.CASCADE)
     deadline = models.DateTimeField(editable=True)
-    
-###############################Chat################################################
-# class Chat(models.Model):
-#     name = models.CharField(max_length=100)
-#     friends = models.ManyToManyField(User, related_name='friends')
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     class Meta:
-#         db_table = "chats"
-#         unique_together = ['name']
-         
-#     def __str__(self):
-#         return self.name
-
-# class Message(models.Model):
-#     content = models.CharField(max_length=1000)
-#     chat = models.ForeignKey(Chat, related_name='messages', on_delete=models.CASCADE)
-#     user = models.ForeignKey(User, related_name='messages', on_delete=models.CASCADE)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     class Meta:
-#         db_table = "messages"
-
-#     def __str__(self):
-#         return self.contact.user.username
 
 class Contact(models.Model):
     user = models.ForeignKey(User, related_name='friends', on_delete=models.CASCADE)

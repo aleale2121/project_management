@@ -252,8 +252,6 @@ class StaffViewSet(ModelViewSet):
 class StudentRegistrationModelViewSet(ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentRegistrationSerializer
-    
-    
     @action(
         detail=False,
         methods=["POST"],
@@ -276,7 +274,7 @@ class StudentRegistrationModelViewSet(ModelViewSet):
             usr = User.objects.get(id=student_id)
             subject = "Dear " + form_data["first_name"] + " " + form_data["last_name"]
             message = password + " is your new passsword!"
-            fromMail = "alefewyimer2@gmail.com"
+            fromMail = "misganewendeg879@gmail.com"
             toArr = [usr.email]
             student_obj = Student.objects.create(
                 user=User.objects.get(id=student_id),
@@ -328,7 +326,7 @@ class StudentRegistrationModelViewSet(ModelViewSet):
             user_obj.set_password(password)  # type: ignore
             user_obj.save(update_fields=["password"])  # type: ignore
             body = password + " is your new password."
-            from_email = "alefewyimer2@gmail.com"
+            from_email = "misganewendeg879@gmail.com"
             to_email = form_data["email"]
             subject = "Email and Passsword Reset"
             toArr = [to_email]
@@ -401,7 +399,7 @@ class StudentRegistrationModelViewSet(ModelViewSet):
                 }
             )
 
-        from_email = "alefewyimer2@gmail.com"
+        from_email = "misganewendeg879@gmail.com"
         email_tuple = tuple()
 
         for i in ctx_list:

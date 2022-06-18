@@ -17,7 +17,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
 DEBUG = True
 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm.herokuapp.com",'10.5.85.106']
-ALLOWED_HOSTS = ['10.5.85.12','10.5.222.98','10.5.214.209','192.168.0.29','10.5.85.12','10.5.216.116','localhost','127.0.0.1','sfpm.herokuapp.com']
+ALLOWED_HOSTS = ['10.5.220.227','10.5.222.98','10.5.214.209','192.168.0.29','10.5.85.12','10.5.216.116','localhost','127.0.0.1','sfpm.herokuapp.com']
 
 # Application definition
 
@@ -180,8 +180,9 @@ ACCOUNT_UNIQUE_EMAIL = True
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
-EMAIL_HOST_USER = "alefewyimer2@gmail.com"
-EMAIL_HOST_PASSWORD = "bfbgnezhdpspowzx"  # past the key or password app here
+EMAIL_HOST_USER = "misganewendeg879@gmail.com"
+EMAIL_HOST_PASSWORD = "qbdcomtmakskxmpx" 
+
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = "alefewyimer2@gmail.com"
+DEFAULT_FROM_EMAIL = "misganewendeg879@gmail.com"

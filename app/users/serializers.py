@@ -52,6 +52,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ("id","username", "email", "password", "is_staff", "is_superuser")
         read_only_fields = ["username", "is_staff"]
         extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
+        write_only_fields=("password")
 
     def update(self, instance, validated_data):
         """Update a user, setting the password correctly and return it"""
@@ -192,7 +193,7 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
             first_name=self.validated_data["first_name"],
             last_name=self.validated_data["last_name"],
         )
-        from_email = "alefewyimer2@gmail.com"
+        from_email = "misganewendeg879@gmail.com"
         send_mail(
                 "SiTE Project Repository Password",
                 password,
@@ -227,7 +228,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
             first_name=self.validated_data["first_name"],
             last_name=self.validated_data["last_name"],
         )
-        from_email = "alefewyimer2@gmail.com"
+        from_email = "misganewendeg879@gmail.com"
         
         send_mail( 
                 "SiTE Project Repository Password",
@@ -255,7 +256,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         if change_pass==True:
             password = BaseUserManager().make_random_password()
             user.set_password(password)
-            from_email = "alefewyimer2@gmail.com"
+            from_email = "misganewendeg879@gmail.com"
             send_mail(
                 "SiTE Project Repository Password",
                 password,

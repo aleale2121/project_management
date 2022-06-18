@@ -241,7 +241,14 @@ class ExaminerModelViewSet(ModelViewSet):
 def similarity_check(request, pk):
     title = get_object_or_404(ProjectTitle.objects, pk=pk)
 
-    allProjects = ProjectTitle.objects.all()
+# exclude(
+#                 user__in=User.objects.filter(
+#                     members__in=Member.objects.all(),
+#                 )
+#             )
+    allProjects = ProjectTitle.objects.all().exclude(
+        group__exact=title.group,
+    )
     filtered = []
     for prj in allProjects:
         if prj.id != title.id:

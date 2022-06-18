@@ -97,7 +97,10 @@ class CreateTokenView(ObtainAuthToken):
 
             except Batch.DoesNotExist:
                 pass
-
+        active_batch_resp=""
+        if(active_batch!=None):
+            active_batch_resp=active_batch.name
+        
         return Response(
             {
                 "token": token.key,
@@ -109,6 +112,7 @@ class CreateTokenView(ObtainAuthToken):
                 "group": joinedGroup,
                 "advisor_to": advisor_to,
                 "examiner_to": examiner_to,
+                "active_batch":active_batch_resp,
             }
         )
 

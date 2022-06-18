@@ -24,6 +24,7 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
     permission_classes=[IsCoordinatorOrReadOnly]
     
     def get_queryset(self):
+        print("**********************")
         current_time = timezone.now()
         active= self.request.query_params.get('active')
         deadlines=None

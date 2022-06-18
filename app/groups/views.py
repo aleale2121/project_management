@@ -290,6 +290,9 @@ def approve_title(request, pk):
     title=ProjectTitle.objects.filter(pk=pk).update(
         status=ProjectTitle.STATUS_CHOICES.APPROVED,
     )
+    ProjectTitle.objects.filter(group=title.group).delete(
+        status=ProjectTitle.STATUS_CHOICES.REJECTED,
+    )
     return Response(model_to_dict(ProjectTitle.objects.get(pk=title)))
 
 
@@ -297,9 +300,7 @@ def approve_title(request, pk):
 @permission_classes([IsCoordinatorOrReadOnly])
 def reject_title(request, pk):
     title = get_object_or_404(ProjectTitle.objects, pk=pk)
-    title=ProjectTitle.objects.filter(pk=pk).update(
-        status=ProjectTitle.STATUS_CHOICES.REJECTED,
-    )    
+    title=ProjectTitle.objects.filter(pk=pk).delete()    
     return Response(model_to_dict(ProjectTitle.objects.get(pk=title)))
 
 
@@ -307,6 +308,7 @@ class ProjectTitleModelViewSet(ModelViewSet):
 
     permission_classes = (IsStudentOrReadOnly,)
     queryset = ProjectTitle.objects.all()
+    filterset_fields = ["group", "status"]
 
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
@@ -314,12 +316,18 @@ class ProjectTitleModelViewSet(ModelViewSet):
         return WriteProjectTitleSerializer
 
     def list(self, request, group_pk=None):
+        status_param= self.request.query_params.get('status')
         queryset = ProjectTitle.objects.filter(group=group_pk)
+        if(status_param !=None):
+            queryset = queryset.filter(status=status_param)
         serializer = ReadProjectTitleSerializer(queryset, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None, group_pk=None):
+        status_param= self.request.query_params.get('status')
         queryset = ProjectTitle.objects.filter(pk=pk, group=group_pk)
+        if(status_param !=None):
+            queryset = queryset.filter(status=status_param)
         group = get_object_or_404(queryset, pk=pk)
         serializer = ReadProjectTitleSerializer(group)
         return Response(serializer.data)

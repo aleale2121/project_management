@@ -84,9 +84,7 @@ class GroupsModelViewSet(PermissionPolicyMixin, ModelViewSet):
             return response
         try:
             instance = self.get_object()
-            self.perform_destroy(
-                instance,
-            )
+            self.perform_destroy(instance,)
         except Group.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)

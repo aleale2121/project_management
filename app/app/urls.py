@@ -30,7 +30,7 @@ urlpatterns = [
     path("api/", include("submission_types.urls")),
     path("api/", include("top_projects.urls")),
     path("api/", include("submissions.urls")),
-   #  path('',     include('chat.urls')),
+    path('api/',     include('marks.urls')),
     path('api/chat/', include('chat.api.urls'))
 
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 

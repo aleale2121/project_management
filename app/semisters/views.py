@@ -1,4 +1,4 @@
-from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
+from constants.constants import MODEL_ALREADY_EXIST, MODEL_PARAM_MISSED, MODEL_RECORD_NOT_FOUND
 from core.models import Semister
 from django.db import transaction
 from pkg.util import error_response, success_response
@@ -18,6 +18,20 @@ class SemisterViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Semister.objects.all()
         return queryset
+    def retrieve(self, request, pk=None):
+        if not pk.isdigit():
+            res = error_response(request, MODEL_PARAM_MISSED, "Semister")
+            res['message']='Invalid request parameter found.'
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        try:
+            queryset = Semister.objects.get(pk=pk)
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "Semister")
+            res['message']='Semister not found with id '+pk+"."
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        serializer=SemisterSerializer(queryset)
+        return Response(serializer.data)
+
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -27,7 +41,7 @@ class SemisterViewSet(viewsets.ModelViewSet):
         print("Count ", count)
         if count > 0:
             res = error_response(request, MODEL_ALREADY_EXIST, "Semister")
-            return Response(res, content_type="application/json")
+            return Response(res,status=int(res['status_code']), content_type="application/json")
         else:
             pass
         semister_obj = Semister.objects.create(name=data["name"])
@@ -39,6 +53,6 @@ class SemisterViewSet(viewsets.ModelViewSet):
         instance = Semister.objects.filter(name=str(kwargs["pk"]))
         if len(instance) != 1:
             res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "Semister")
-            return Response(res, content_type="application/json")
+            return Response(res, status=int(res['status_code']),content_type="application/json")
         instance.delete()
         return Response({"result": "Semister instance was successfuly deleted!"})

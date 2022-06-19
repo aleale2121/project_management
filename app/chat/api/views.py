@@ -7,8 +7,8 @@ from rest_framework.generics import (
     DestroyAPIView,
     UpdateAPIView
 )
-from core.models import Batch, Chat, Contact, Student
-from chat.views import get_user_contact
+from core.models import Batch, Chat, Contact, Student,User
+from chat.views import get_last_20_messages, get_user_contact
 from rest_framework.decorators import action
 from .serializers import ChatSerializer
 from rest_framework.viewsets import ModelViewSet
@@ -19,21 +19,20 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 
 
-
-User = get_user_model()
-
-
 class ChatListView(ListAPIView):
     serializer_class = ChatSerializer
     permission_classes = (permissions.AllowAny, )
 
     def get_queryset(self):
+        print("query set  ...")
         queryset = Chat.objects.all()
-        username = self.request.query_params.get('username', None)
+        username = self.request.query_params.get('username')
+        print("username ",username)
         if username is not None:
-            contact = get_user_contact(username)
-            queryset = contact.chats.all()
+            contact=get_user_contact(username)
+            queryset=contact.chats.all()
         return queryset
+    
 
 
 class ChatDetailView(RetrieveAPIView):
@@ -64,10 +63,27 @@ class ChatModelViewSet(ModelViewSet):
     ordering_fields = ["id"]
     search_fields = ["id"]
     filter_fields = ["id"]
+    
+    
+    @action(
+        detail=True,
+        methods=['GET'],
+        url_path='messages',
+    )
+    def get_user_chat_message(self, request, *args, **kwargs):
+        chat_messages=None
+        chatId=0
+        id=kwargs['pk']
+        print("pk=> ",id)
+        contact=None
+        if id:
+            chatId=int(id)
+        print("line 81")
+        chat_messages=get_last_20_messages(chatId)
+        data=ChatSerializer(chat_messages).data
+        return Response(data)
 
-    def get_queryset(self):
-        queryset = Chat.objects.all()
-        return queryset
+    
     @action(
         detail=False,
         methods=['POST'],
@@ -193,6 +209,9 @@ class ChatModelViewSet(ModelViewSet):
             return Response(res, content_type="application/json")
         chat_obj.participants.remove(contact_obj)
         Response({"message":"Member Succesfully removed from the  channels"})
+        
+        
+        
         
 
 

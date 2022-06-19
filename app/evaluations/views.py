@@ -59,11 +59,11 @@ class EvaluaionViewSet(viewsets.ModelViewSet):
     )
     def getComment(self, request,batch,group,id):
         comment=None
-        count=StudentEvaluation.objects.filter(member__group=group,member__group__batch=batch,member__member=id).count()
+        count=Evaluation.objects.filter(group=group,batch=batch,marks__member=id).count()
         if (count==4):
-            comment=StudentEvaluation.objects.filter(member__group=group,member__group__batch=batch,member__member=id).values("member_id","submission_type_id","comment","mark")
+            comment=Evaluation.objects.filter(group=group,batch=batch,marks__member=id).values("member_id","submission_type_id","comment","mark")
         else:  
-            comment=StudentEvaluation.objects.filter(member__group=group,member__group__batch=batch,member__member=id).values("submission_type","comment")
+            comment=Evaluation.objects.filter(group=group,batch=batch,marks__member=id).values("submission_type","comment")
         return Response(comment)
 
 
@@ -78,6 +78,7 @@ class EvaluaionViewSet(viewsets.ModelViewSet):
         evaluation_obj=None
         group_obj=None
         batch_obj=None
+        print("evaluation_data =>",evaluation_data)
         try:
             batch_obj = Batch.objects.get(name=evaluation_data["batch"])
         except:
@@ -118,24 +119,30 @@ class EvaluaionViewSet(viewsets.ModelViewSet):
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Examiner")
             res["message"]=" User is not an examiner"
             return Response(res,status=int(res['status_code']), content_type="application/json")
+        is_exist=False
         is_exist = Evaluation.objects.filter(
             submission_type=submission_type_obj,
             examiner=examiner_obj, 
             group=group_obj,
             batch=batch_obj
         ).exists()
+        print("=== is exist ==== ",is_exist)
 
         if is_exist:
+            print("line ===131")
             res = error_response(request, MODEL_ALREADY_EXIST, "StudentEvaluation")
             res['message']="student can't be evaluated multiple times for the same submission type."
             return Response(res, status=int(res['status_code']),content_type="application/json")
         else:
             pass
+        
+        
         print(evaluation_data['group']," <=> ",examiner_obj.group.id)
         if(int(evaluation_data['group'])!=int(examiner_obj.group.id)):
             res = error_response(request, MODEL_CREATION_FAILED, "Examiner")
             res['message']="You don't have permission to evaluate this group."
             return Response(res, status=int(res['status_code']),content_type="application/json")
+      
       
         evaluation_obj=Evaluation(
             submission_type=submission_type_obj,
@@ -143,7 +150,8 @@ class EvaluaionViewSet(viewsets.ModelViewSet):
             batch=batch_obj,
             examiner=examiner_obj,
             comment=evaluation_data["comment"])
-    
+        
+        
         for data in evaluation_data['students_mark']:
             print("=======================================")
             try:
@@ -162,14 +170,12 @@ class EvaluaionViewSet(viewsets.ModelViewSet):
                 res["message"]='please enter mark which is between 0 and '+str(submission_type_obj.max_mark)
                 return Response(res, status=int(res['status_code']),content_type="application/json")
             mark_obj=Mark.objects.create(member=member_obj,mark=data['mark'])
+            evaluation_obj.save()
             evaluation_obj.marks.add(mark_obj)
-
-       
-        evaluation_obj.save()  
-         
+        
         serializer = EvaluationSerializer(evaluation_obj)
-        data = success_response(serializer.data)
-        return Response((data),status=int(res['status_code']),)
+        data = serializer.data
+        return Response(data)
 
     def update(self, request, *args, **kwargs):
         print("updating ...")

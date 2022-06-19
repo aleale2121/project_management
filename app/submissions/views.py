@@ -8,7 +8,7 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
-from submissions.serializers import SubmissionsSerializer
+from submissions.serializers import  SubmissionsSerializer
 
 
 class SubmissionViewSet(viewsets.ModelViewSet):
@@ -16,6 +16,18 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStudentOrReadOnly]
     queryset = Submission.objects.all()
     filterset_fields = ["submissionType", "group"]
+    def get_queryset(self):
+        current_time = timezone.now()
+        active= self.request.query_params.get('active')
+        submissions_list=None
+        if(active =="True"):
+            submissions_list = Submission.objects.filter(submissionType__submission_type_deadline__dead_line__gt=current_time)
+        elif (active=="False"):
+            submissions_list = Submission.objects.filter(submissionType__submission_type_deadline__dead_line__lt=current_time)
+        else:
+            submissions_list=Submission.objects.all()
+        return submissions_list
+
 
     def get_queryset(self):
         current_time = timezone.now()

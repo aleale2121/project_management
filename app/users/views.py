@@ -105,6 +105,7 @@ class CreateTokenView(ObtainAuthToken):
             {
                 "token": token.key,
                 "user_id": user.pk,
+                "username":user.username,
                 "is_superadmin": user.is_superuser,
                 "is_staff": user.is_staff,
                 "is_coordinator": is_coordinator,

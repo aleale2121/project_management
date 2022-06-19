@@ -7,10 +7,11 @@ from rest_framework.fields import SerializerMethodField
 from django.utils import timezone
 
 
+
 class SubmissionDeadLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubmissionDeadLine
-        fields = ["id", "name", "batch", "dead_line"]
+        fields = ["id", "name", "batch", "dead_line","status"]
         depth = 1
 
 
@@ -28,3 +29,5 @@ class TitleSubmissionDeadLineSerializer(serializers.ModelSerializer):
     def get_status(self, obj):
         current_time = timezone.now()
         return obj.deadline > current_time
+
+

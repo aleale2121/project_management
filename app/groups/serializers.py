@@ -14,6 +14,7 @@ from core.models import (
 )
 from django.core import serializers as djSerializer
 from django.db import IntegrityError
+from django.forms import model_to_dict
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
@@ -146,27 +147,27 @@ class GroupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"error": "currently there is no active batch"})
 
         current_batch_groups = Group.objects.filter(batch=active_batch)
-        for current_batch_group in current_batch_groups:
-            group_members_list = Member.objects.filter(group=current_batch_group)
-            for group_member in group_members_list:
-                for g_member in g_members:
-                    print(g_member)
-                    if MemberSerializer(group_member).data["member"] == g_member:
-                        response = ""
-                        if g_member == current_user.username:
-                            response = "You have already joined " + current_batch_group.group_name
-                        else:
-                            response = (
-                                "student with username "
-                                + g_member
-                                + " already joined "
-                                + current_batch_group.group_name
-                            )
-                        raise serializers.ValidationError(
-                            {
-                                "error": response,
-                            },
-                        )
+        registered_members = Member.objects.filter(
+            group__in=current_batch_groups,
+            member__username__in=g_members,
+        )
+        for reg_member in registered_members:
+            response = ""
+            usr = User.objects.get(username=reg_member.member)
+            if reg_member.member == current_user.username:
+                response = "You have already joined " + str(reg_member.group.group_name)
+            else:
+                response = (
+                    "student with username "
+                    + str(reg_member.member)
+                    + " already joined "
+                    + str(reg_member.group.group_name)
+                )
+                raise serializers.ValidationError(
+                    {
+                        "error": response,
+                    },
+                )
 
         return super().validate(data)
 
@@ -205,7 +206,6 @@ class GroupSerializer(serializers.ModelSerializer):
 
         member_objects = []
         for student in student_list:
-            print(student)
             member_objects.append(Member(group=group, member=student))
 
         Member.objects.bulk_create(member_objects)
@@ -325,6 +325,7 @@ class WriteExaminerSerialzer(serializers.ModelSerializer):
     class Meta:
         model = Examiner
         fields = ("group", "examiner")
+
     def validate(self, data):
         username = data.get("examiner")
         try:
@@ -421,6 +422,54 @@ class ReadProjectTitleSerializer(serializers.ModelSerializer):
 
     def get_rejection_reason(self, obj):
         return obj.rejection_reason
+
+
+class ReadProjectTitleSerializerTwo(serializers.ModelSerializer):
+    no = SerializerMethodField()
+    title_name = SerializerMethodField()
+    title_description = SerializerMethodField()
+    status = SerializerMethodField()
+    rejection_reason = SerializerMethodField()
+    batch = SerializerMethodField()
+    group = ReadGroupSerializer()
+
+
+    class Meta:
+        model = ProjectTitle
+        fields = (
+            "id",
+            "no",
+            "title_name",
+            "title_description",
+            "status",
+            "rejection_reason",
+            "batch",
+            "group"
+        )
+
+    def validate(self, data):
+        return super().validate(data)
+
+    def get_no(self, obj):
+        return obj.no
+
+    def get_title_name(self, obj):
+
+        return obj.title_name
+
+    def get_title_description(self, obj):
+        return obj.title_description
+
+    def get_status(self, obj):
+        return obj.status
+
+    def get_rejection_reason(self, obj):
+        return obj.rejection_reason
+
+    def get_batch(self, obj):
+        return obj.group.batch.name
+
+
 
 
 class ReadProjectTitleFromMapSerializer(serializers.ModelSerializer):

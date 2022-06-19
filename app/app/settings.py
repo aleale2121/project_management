@@ -17,7 +17,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
 DEBUG = True
 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm.herokuapp.com",'10.5.85.106']
-ALLOWED_HOSTS = ['10.5.208.160','10.5.222.98','10.5.214.209','192.168.0.29','10.5.85.12','10.5.216.116','localhost','127.0.0.1','sfpm.herokuapp.com']
+ALLOWED_HOSTS = ['10.5.227.202','10.5.222.98','10.5.214.209','192.168.0.29','10.5.85.12','10.5.216.116','localhost','127.0.0.1','sfpm.herokuapp.com']
 
 # Application definition
 

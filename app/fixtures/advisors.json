@@ -1,0 +1,1 @@
+[{"model": "core.advisor", "pk": 1, "fields": {"group": 10, "advisor": 5}}, {"model": "core.advisor", "pk": 2, "fields": {"group": 17, "advisor": 5}}, {"model": "core.advisor", "pk": 3, "fields": {"group": 17, "advisor": 102}}, {"model": "core.advisor", "pk": 4, "fields": {"group": 22, "advisor": 5}}]

@@ -1,0 +1,1 @@
+[{"model": "core.batch", "pk": "2010", "fields": {"is_active": false}}, {"model": "core.batch", "pk": "2011", "fields": {"is_active": false}}, {"model": "core.batch", "pk": "2012", "fields": {"is_active": false}}, {"model": "core.batch", "pk": "2013", "fields": {"is_active": false}}, {"model": "core.batch", "pk": "2014", "fields": {"is_active": true}}]

@@ -3,7 +3,7 @@ from django.utils import timezone
 import json,pytz
 from core.permissions import IsCoordinatorOrReadOnly
 from datetime import datetime    
-from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
+from constants.constants import MODEL_ALREADY_EXIST, MODEL_PARAM_MISSED, MODEL_RECORD_NOT_FOUND
 from core.models import Batch, Examiner, Member, StudentEvaluation, SubmissionDeadLine, SubmissionType, TitleDeadline
 from django.db import transaction
 from django_filters import rest_framework as filters
@@ -54,18 +54,18 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
             submission_type_obj = SubmissionType.objects.get(name=data["name"])
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "SubmissionType")
-            return Response(res, content_type="application/json")
+            return Response(res,status=int(res['status_code']), content_type="application/json")
         try:
             batch_obj = Batch.objects.get(name=data["batch"])
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Batch")
-            return Response(res, content_type="application/json")
+            return Response(res,status=int(res['status_code']), content_type="application/json")
 
         count = SubmissionDeadLine.objects.filter(name=submission_type_obj, batch=batch_obj).count()
         print("Count ", count)
         if count > 0:
             res = error_response(request, MODEL_ALREADY_EXIST, "SubmissionDeadLine")
-            return Response(res, content_type="application/json")
+            return Response(res, status=int(res['status_code']),content_type="application/json")
         else:
             pass
         date_form_data   = None
@@ -84,22 +84,40 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
             except:
                 res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "SubmissionDeadline")
                 res["message"]="Unable to set " +data["name"]+" deadline,try again." 
-                return Response(res, content_type="application/json")
+                return Response(res,status=int(res['status_code']), content_type="application/json")
                 
         else:
             res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "SubmissionDeadline")
-            res["message"]="Please try to set meaningful date form data." 
+            res["message"]="Please try to set correctly formated date data ." 
             return Response(res, content_type="application/json")
                 
 
         serializer = SubmissionDeadLineSerializer(new_sub_dead_line_obj)
         data = success_response(serializer.data)
         return Response((data))
+    def retrieve(self, request, pk=None):
+        if not pk.isdigit():
+            res = error_response(request, MODEL_PARAM_MISSED, "SubmissionDeadLine")
+            res['message']='Invalid request parameter found.'
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        try:
+            queryset = SubmissionDeadLine.objects.get(pk=pk)
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "SubmissionDeadLine")
+            res['message']='SubmissionDeadLine not found with id '+pk+"."
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        serializer=SubmissionDeadLineSerializer(queryset)
+        return Response(serializer.data)
+
 
     def update(self, request, *args, **kwargs):
         print("updating ...")
         data = request.data
         pk = kwargs["pk"]
+        if not pk.isdigit():
+            res = error_response(request, MODEL_PARAM_MISSED, "SubmissionDeadLine")
+            res['message']='Invalid request parameter found.'
+            return Response(res,status=int(res['status_code']), content_type="application/json")
         if pk:
             pk = int(pk)
         sub_dead_line_obj =None
@@ -107,14 +125,15 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
             sub_dead_line_obj =  SubmissionDeadLine.objects.get(pk=pk)
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "SubmissionDeadLine")
-            return Response(res, content_type="application/json")
+            res['message']='SubmissionDeadLine is not found.'
+            return Response(res,status=int(res['status_code']), content_type="application/json")
 
-        if data.get("name"):
+        if data.get("name") and not data.get("name").isdigit():
             sub_dead_line_obj.name = data["name"]
         else:
             pass
 
-        if data.get("batch"):
+        if data.get("batch") and data.get("batch").isdigit():
             sub_dead_line_obj.batch = data["batch"]
         else:
             pass
@@ -145,14 +164,14 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
             except:
                 res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "Batch")
                 res["message"]="No active batch found!"
-                return Response(res, content_type="application/json")
+                return Response(res,status=int(res['status_code']), content_type="application/json")
             
             try:
                 dead_line_obj=SubmissionDeadLine.objects.get(name=sub,batch=batch_obj)
             except:
                 res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "SubmissionDeadLine")
                 res["message"]=f"SubmissionDeadLine does not exist with submission type {sub}!"
-                return Response(res, content_type="application/json")
+                return Response(res, status=int(res['status_code']),content_type="application/json")
             
             deadline=dead_line_obj.dead_line
             print("deadline =>",deadline,"current_date=>",self.__current_date)
@@ -167,7 +186,7 @@ class SubmissionDeadLineViewSet(viewsets.ModelViewSet):
         instance = SubmissionDeadLine.objects.filter(id=int(kwargs["pk"]))
         if len(instance) != 1:
             res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "SubmissionDeadLine")
-            return Response(res, content_type="application/json")
+            return Response(res, status=int(res['status_code']),content_type="application/json")
         instance.delete()
         return Response({"result": "SubmissionDeadLine instance was successfuly deleted!"})
 

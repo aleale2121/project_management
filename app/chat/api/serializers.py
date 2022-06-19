@@ -10,13 +10,13 @@ class ContactSerializer(serializers.StringRelatedField):
 
 
 class ChatSerializer(serializers.ModelSerializer):
-    participants = ContactSerializer(many=True)
+    # participants = ContactSerializer(many=True)
 
     class Meta:
         model = Chat
         fields = ('id', 'messages', 'participants')
         read_only = ('id')
-        depth=2
+        depth=1
 
     def create(self, validated_data):
         print(validated_data)

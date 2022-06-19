@@ -54,6 +54,7 @@ class BatchModelViewSet(ModelViewSet):
 
 class CreateTokenView(ObtainAuthToken):
     """Create a new token for user"""
+
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -102,8 +103,10 @@ class CreateTokenView(ObtainAuthToken):
             active_batch_resp=active_batch.name
         
         return Response(
-            {"token": token.key,
+            {
+                "token": token.key,
                 "user_id": user.pk,
+                "username":user.username,
                 "is_superadmin": user.is_superuser,
                 "is_staff": user.is_staff,
                 "is_coordinator": is_coordinator,
@@ -117,7 +120,6 @@ class CreateTokenView(ObtainAuthToken):
 
     serializer_class = AuthTokenSerializer
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
-
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
     """Manage the authenticated user"""

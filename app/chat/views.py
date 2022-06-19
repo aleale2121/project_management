@@ -5,15 +5,35 @@ from core.models import Chat, Contact
 User = get_user_model()
 
 
-def get_last_10_messages(chatId):
-    chat = get_object_or_404(Chat, id=chatId)
-    return chat.messages.order_by('-timestamp').all()[:10]
+def get_last_20_messages(chatId):
+    chat=None
+    try:
+        chat = Chat.objects.get(id=chatId)
+    except:
+        return None 
+    return chat.messages.order_by('-timestamp').all()[:20]
 
 
 def get_user_contact(username):
-    user = get_object_or_404(User, username=username)
-    return get_object_or_404(Contact, user=user)
+    user=None
+    contact=None
+    try:
+        user = User.objects.get(username=username)
+    except:
+        return None
+    try:
+        contact = Contact.objects.get( user=user)
+    except:
+        return None 
+    return contact
 
 
 def get_current_chat(chatId):
-    return get_object_or_404(Chat, id=chatId)
+    chat=None
+    try:
+        print("chat ID",chatId)
+        chat = Chat.objects.get(id=chatId)
+    except:
+        print("line 36")
+        return
+    return chat

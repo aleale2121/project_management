@@ -20,3 +20,15 @@ if __name__ == '__main__':
     # robel J9An6hsvbj
     # gethun ZtPhADDquJ
     # atalel epLP8uNjRn
+    
+    
+#     yideg  -- PASSabc123!
+# staff1  -- Y4CF3472sD  --co
+# staff2  -- 6722pcrZf2  --examier
+# staffTEST  -- RkFZmMD7qy -ADVISOR
+
+
+# //students 
+# username333 -- 3VHC85Ybyh
+# me          -- VmGJyBH9CM
+# me1       --- v8wp6ucgT2

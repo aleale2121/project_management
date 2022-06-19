@@ -139,14 +139,14 @@ class MemberModelViewSet(viewsets.ModelViewSet):
         reg_member = None
         try:
             reg_member = Member.objects.get(member=user.pk)
-            
-            resp="student already joined "+reg_member.group.group_name
+
+            resp = "student already joined " + reg_member.group.group_name
             return Response(
-                    {"error": resp},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            
-        except Member.DoesNotExist:            
+                {"error": resp},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except Member.DoesNotExist:
             pass
         request.data["group"] = group.pk
         request.data["member"] = user.pk
@@ -293,24 +293,28 @@ def similarity_check(request, pk):
 @permission_classes([IsCoordinatorOrReadOnly])
 def approve_title(request, pk):
     title = get_object_or_404(ProjectTitle.objects, pk=pk)
+    # title =ProjectTitle.objects.get(pk=pk)
     ProjectTitle.objects.filter(group=title.group).update(
         status=ProjectTitle.STATUS_CHOICES.REJECTED,
     )
-    title = ProjectTitle.objects.filter(pk=pk).update(
+    ProjectTitle.objects.filter(pk=pk).update(
         status=ProjectTitle.STATUS_CHOICES.APPROVED,
     )
-    ProjectTitle.objects.filter(group=title.group).delete(
+    ProjectTitle.objects.filter(
+        group=title.group,
         status=ProjectTitle.STATUS_CHOICES.REJECTED,
-    )
-    return Response(model_to_dict(ProjectTitle.objects.get(pk=title)))
+    ).delete()
+    return Response(model_to_dict(ProjectTitle.objects.get(pk=pk)))
 
 
 @api_view(["PATCH"])
 @permission_classes([IsCoordinatorOrReadOnly])
 def reject_title(request, pk):
-    title = get_object_or_404(ProjectTitle.objects, pk=pk)
-    title = ProjectTitle.objects.filter(pk=pk).delete()
-    return Response(model_to_dict(ProjectTitle.objects.get(pk=title)))
+    get_object_or_404(ProjectTitle.objects, pk=pk)
+    ProjectTitle.objects.filter(pk=pk).update(
+        status=ProjectTitle.STATUS_CHOICES.REJECTED, rejection_reason=request.data["rejection_reason"]
+    )
+    return Response(model_to_dict(ProjectTitle.objects.get(pk=pk)))
 
 
 class AllProjectTitleModelViewSet(ModelViewSet):

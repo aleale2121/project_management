@@ -12,6 +12,7 @@ groups_router.register(r'members', views.MemberModelViewSet, basename='group-mem
 groups_router.register(r'titles', views.ProjectTitleModelViewSet, basename='group-titles')
 router.register(r"advisors", views.AdvisorModelViewSet, basename="groups-advisor")
 router.register(r"examiners", views.ExaminerModelViewSet, basename="groups-examiner")
+router.register(r"titles", views.AllProjectTitleModelViewSet, basename="all-titles")
 
 urlpatterns = [
     path(r'', include(router.urls)),

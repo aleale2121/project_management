@@ -1,8 +1,5 @@
 import json
 from tokenize import group
-from django.utils import timezone
-from django.shortcuts import get_object_or_404
-from rest_framework.permissions import SAFE_METHODS
 
 import requests
 from constants.constants import MODEL_RECORD_NOT_FOUND, MODEL_UPDATE_FAILED
@@ -15,7 +12,6 @@ from core.models import (
     ProjectTitle,
     Student,
     TitleDeadline,
-    
     User,
 )
 from core.permissions import (
@@ -28,16 +24,18 @@ from core.permissions import (
     IsStudentOrReadOnly,
     PermissionPolicyMixin,
 )
+from django.conf import settings
 from django.db import transaction
 from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.datastructures import MultiValueDictKeyError
 from pkg.util import error_response
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
-from django.conf import settings
 
 from groups.serializers import (
     GroupSerializer,
@@ -48,6 +46,7 @@ from groups.serializers import (
     ReadMembersSerializer,
     ReadProjectTitleFromMapSerializer,
     ReadProjectTitleSerializer,
+    ReadProjectTitleSerializerTwo,
     WriteAdvisorSerialzer,
     WriteExaminerSerialzer,
     WriteProjectTitleSerializer,
@@ -72,16 +71,16 @@ class GroupsModelViewSet(PermissionPolicyMixin, ModelViewSet):
         return GroupSerializer
 
     def update(self, request, *args, **kwargs):
-        self.methods = ("put",)
-        response = self.check_membership(request, kwargs["pk"])
-        if response != None:
-            return response
+        # self.methods = ("put",)
+        # response = self.check_membership(request, kwargs["pk"])
+        # if response != None:
+        #     return response
         return super(self.__class__, self).update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        response = self.check_membership(request, kwargs["pk"])
-        if response != None:
-            return response
+        # response = self.check_membership(request, kwargs["pk"])
+        # if response != None:
+        #     return response
         try:
             instance = self.get_object()
             self.perform_destroy(
@@ -241,11 +240,6 @@ class ExaminerModelViewSet(ModelViewSet):
 def similarity_check(request, pk):
     title = get_object_or_404(ProjectTitle.objects, pk=pk)
 
-# exclude(
-#                 user__in=User.objects.filter(
-#                     members__in=Member.objects.all(),
-#                 )
-#             )
     allProjects = ProjectTitle.objects.all().exclude(
         group__exact=title.group,
     )
@@ -294,7 +288,7 @@ def approve_title(request, pk):
     ProjectTitle.objects.filter(group=title.group).update(
         status=ProjectTitle.STATUS_CHOICES.REJECTED,
     )
-    title=ProjectTitle.objects.filter(pk=pk).update(
+    title = ProjectTitle.objects.filter(pk=pk).update(
         status=ProjectTitle.STATUS_CHOICES.APPROVED,
     )
     ProjectTitle.objects.filter(group=title.group).delete(
@@ -307,8 +301,38 @@ def approve_title(request, pk):
 @permission_classes([IsCoordinatorOrReadOnly])
 def reject_title(request, pk):
     title = get_object_or_404(ProjectTitle.objects, pk=pk)
-    title=ProjectTitle.objects.filter(pk=pk).delete()    
+    title = ProjectTitle.objects.filter(pk=pk).delete()
     return Response(model_to_dict(ProjectTitle.objects.get(pk=title)))
+
+
+class AllProjectTitleModelViewSet(ModelViewSet):
+    permission_classes = (IsStudentOrReadOnly,)
+    filterset_fields = [
+        "group",
+    ]
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return ReadProjectTitleSerializerTwo
+        return WriteProjectTitleSerializer
+
+    def get_queryset(self):
+        queryset = None
+        batch = self.request.query_params.get("batch")
+
+        if batch != None:
+            queryset = ProjectTitle.objects.filter(group__batch__exact=batch)
+
+        else:
+            try:
+                active_batch = Batch.objects.get(is_active=True)
+                queryset = ProjectTitle.objects.filter(
+                    group__batch__exact=active_batch,
+                )
+            except Batch.DoesNotExist:
+                queryset = ProjectTitle.objects.all()
+
+        return queryset
 
 
 class ProjectTitleModelViewSet(ModelViewSet):
@@ -323,17 +347,17 @@ class ProjectTitleModelViewSet(ModelViewSet):
         return WriteProjectTitleSerializer
 
     def list(self, request, group_pk=None):
-        status_param= self.request.query_params.get('status')
+        status_param = self.request.query_params.get("status")
         queryset = ProjectTitle.objects.filter(group=group_pk)
-        if(status_param !=None):
+        if status_param != None:
             queryset = queryset.filter(status=status_param)
         serializer = ReadProjectTitleSerializer(queryset, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None, group_pk=None):
-        status_param= self.request.query_params.get('status')
+        status_param = self.request.query_params.get("status")
         queryset = ProjectTitle.objects.filter(pk=pk, group=group_pk)
-        if(status_param !=None):
+        if status_param != None:
             queryset = queryset.filter(status=status_param)
         group = get_object_or_404(queryset, pk=pk)
         serializer = ReadProjectTitleSerializer(group)
@@ -343,8 +367,8 @@ class ProjectTitleModelViewSet(ModelViewSet):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
-        resp= self.check_deadline(request)
-        if resp!=None:
+        resp = self.check_deadline(request)
+        if resp != None:
             return resp
 
         group = get_object_or_404(Group.objects, pk=group_pk)
@@ -380,8 +404,8 @@ class ProjectTitleModelViewSet(ModelViewSet):
         if response != None:
             return response
 
-        resp= self.check_deadline(request)
-        if resp!=None:
+        resp = self.check_deadline(request)
+        if resp != None:
             return resp
         group = get_object_or_404(Group.objects, pk=group_pk)
         request.data["group"] = group
@@ -391,8 +415,8 @@ class ProjectTitleModelViewSet(ModelViewSet):
         response = self.check_membership(request, group_pk)
         if response != None:
             return response
-        resp= self.check_deadline(request)
-        if resp!=None:
+        resp = self.check_deadline(request)
+        if resp != None:
             return resp
         member = get_object_or_404(self.queryset, pk=pk, group__pk=group_pk)
         self.perform_destroy(member)
@@ -414,7 +438,7 @@ class ProjectTitleModelViewSet(ModelViewSet):
             Member.objects.get(group=group, member=request.user)
         except Member.DoesNotExist:
             return Response({"error": "your are not authorized to edit or view the group"})
-    
+
     def check_deadline(self, request):
         if not request.method in SAFE_METHODS:
             active_batch = None
@@ -452,7 +476,7 @@ class ProjectTitleModelViewSet(ModelViewSet):
                         batch=active_batch,
                     )
                     now_time = timezone.now()
-                    if now_time>= deadline.deadline:
+                    if now_time >= deadline.deadline:
                         return Response(
                             {"error": "title submission date is closed"},
                             status=status.HTTP_400_BAD_REQUEST,

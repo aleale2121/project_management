@@ -5,13 +5,13 @@ from core.models import Chat, Contact
 User = get_user_model()
 
 
-def get_last_20_messages(chatId):
+def get_last_40_messages(chatId):
     chat=None
     try:
         chat = Chat.objects.get(id=chatId)
     except:
         return None 
-    return chat.messages.order_by('-timestamp').all()[:20]
+    return chat.messages.all().order_by('timestamp')
 
 
 def get_user_contact(username):

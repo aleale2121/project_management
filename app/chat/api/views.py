@@ -8,7 +8,7 @@ from rest_framework.generics import (
     UpdateAPIView
 )
 from core.models import Batch, Chat, Contact, Student,User
-from chat.views import get_last_20_messages, get_user_contact
+from chat.views import get_last_40_messages, get_user_contact
 from rest_framework.decorators import action
 from .serializers import ChatSerializer
 from rest_framework.viewsets import ModelViewSet
@@ -79,7 +79,7 @@ class ChatModelViewSet(ModelViewSet):
         if id:
             chatId=int(id)
         print("line 81")
-        chat_messages=get_last_20_messages(chatId)
+        chat_messages=get_last_40_messages(chatId)
         data=ChatSerializer(chat_messages).data
         return Response(data)
 

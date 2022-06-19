@@ -1,7 +1,7 @@
 import json
 from urllib.request import proxy_bypass
 
-from constants.constants import FORBIDDEN_REQUEST_FOUND, MODEL_ALREADY_EXIST, MODEL_CREATION_FAILED, MODEL_RECORD_NOT_FOUND
+from constants.constants import FORBIDDEN_REQUEST_FOUND, MODEL_ALREADY_EXIST, MODEL_CREATION_FAILED, MODEL_PARAM_MISSED, MODEL_RECORD_NOT_FOUND
 from core.models import  Batch, Group, ProjectTitle, TopProject,User, Voter
 from django.db import transaction
 from django_filters import rest_framework as filters
@@ -59,22 +59,22 @@ class TopProjectViewSet(viewsets.ModelViewSet):
             user_obj = User.objects.get(id=int(usr))
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "User")
-            return Response(res, content_type="application/json")
+            return Response(res, status=int(res['status_code']),content_type="application/json")
         try:
             batch_obj = Batch.objects.get(name=form_data["batch"])
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Batch")
-            return Response(res, content_type="application/json")
+            return Response(res, status=int(res['status_code']),content_type="application/json")
         try:
             group_obj = Group.objects.get(id=form_data["group"])
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Group")
-            return Response(res, content_type="application/json")
+            return Response(res, status=int(res['status_code']),content_type="application/json")
         try:
             title_obj = ProjectTitle.objects.get(id=form_data["id"])
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Title")
-            return Response(res, content_type="application/json")
+            return Response(res,status=int(res['status_code']), content_type="application/json")
 
         
         project_obj = TopProject.objects.create(
@@ -86,6 +86,20 @@ class TopProjectViewSet(viewsets.ModelViewSet):
         serializer = TopProjectSerializer(project_obj)
         data = success_response(serializer.data)
         return Response((data))
+    
+    def retrieve(self, request, pk=None):
+        if not pk.isdigit():
+            res = error_response(request, MODEL_PARAM_MISSED, "TopProject")
+            res['message']='Invalid request parameter found.'
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        try:
+            queryset = TopProject.objects.get(pk=pk)
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "TopProject")
+            res['message']='TopProject not found with id '+pk+"."
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        serializer=TopProjectSerializer(queryset)
+        return Response(serializer.data)
     @action(
         detail=True,
         methods=["PUT"],
@@ -118,12 +132,12 @@ class TopProjectViewSet(viewsets.ModelViewSet):
                     user_obj = User.objects.get(id=usr)
                 except:
                     res = error_response(request, MODEL_RECORD_NOT_FOUND, "User")
-                    return Response(res, content_type="application/json")
+                    return Response(res,status=int(res['status_code']), content_type="application/json")
                 try:
                     top_project_obj = TopProject.objects.get(id=pk)
                 except:
                     res = error_response(request, MODEL_RECORD_NOT_FOUND, "TopProject")
-                    return Response(res, content_type="application/json")
+                    return Response(res,status=int(res['status_code']), content_type="application/json")
                 Voter.objects.create(user_id=user_obj,project_id=top_project_obj)
                 TopProject.objects.filter(id=pk).update(vote=F('vote')+1)
                 return Response({"message":"You Voted Successfully!"})
@@ -138,12 +152,12 @@ class TopProjectViewSet(viewsets.ModelViewSet):
                 user_obj = User.objects.get(id=usr)
             except:
                 res = error_response(request, MODEL_RECORD_NOT_FOUND, "User")
-                return Response(res, content_type="application/json")
+                return Response(res,status=int(res['status_code']), content_type="application/json")
             try:
                 top_project_obj = TopProject.objects.get(id=pk)
             except:
                 res = error_response(request, MODEL_RECORD_NOT_FOUND, "TopProject")
-                return Response(res, content_type="application/json")
+                return Response(res, status=int(res['status_code']),content_type="application/json")
             Voter.objects.create(user_id=user_obj,project_id=top_project_obj)
             return Response({"message":"You Voted Successfully!"})
             
@@ -152,6 +166,6 @@ class TopProjectViewSet(viewsets.ModelViewSet):
         instance = TopProject.objects.filter(id=int(kwargs["pk"]))
         if len(instance) != 1:
             res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "TopProject")
-            return Response(res, content_type="application/json")
+            return Response(res, status=int(res['status_code']),content_type="application/json")
         instance.delete()
         return Response({"result": "TopProject instance was successfuly deleted!"})

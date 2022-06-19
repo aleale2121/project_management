@@ -52,6 +52,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ("id","username", "email", "password", "is_staff", "is_superuser")
         read_only_fields = ["username", "is_staff"]
         extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
+        write_only_fields=("password")
 
     def update(self, instance, validated_data):
         """Update a user, setting the password correctly and return it"""
@@ -192,7 +193,7 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
             first_name=self.validated_data["first_name"],
             last_name=self.validated_data["last_name"],
         )
-        from_email = "yidegaait2010@gmail.com"
+        from_email = "misganewendeg879@gmail.com"
         send_mail(
                 "SiTE Project Repository Password",
                 password,
@@ -200,8 +201,37 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
                 [user.email],
                 fail_silently=False,
             )          
-        print("email sent")
         return staff
+
+    def updateStaff(self, **kwargs):
+        my_view = self.context['view']
+        my_view.kwargs['partial'] = True
+        staff_id = my_view.kwargs.get('pk')
+        staff=get_object_or_404(Staff, pk=staff_id)
+        change_pass = self.context['request'].query_params.get('change_pass', None)
+        email = self.validated_data.pop("email", None)
+        username = self.validated_data.pop("username",None)
+        user=get_object_or_404(User,username=staff.user.username)
+        if username:
+            user.username=username
+        if email:
+            user.email=email
+        user.save()
+        if change_pass==True:
+            password = BaseUserManager().make_random_password()
+            user.set_password(password)
+            from_email = "alefewyimer2@gmail.com"
+            send_mail(
+                "SiTE Project Repository Password",
+                password,
+                from_email,
+                [user.email],
+                fail_silently=False,
+            )
+        staff = super().update(staff, self.validated_data)
+        staff.user=user
+        return staff
+    
 
 
 class StudentRegistrationSerializer(serializers.ModelSerializer):
@@ -227,15 +257,15 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
             first_name=self.validated_data["first_name"],
             last_name=self.validated_data["last_name"],
         )
-        from_email = "yidegaait2010@gmail.com"
-        send_mail(
+        from_email = "misganewendeg879@gmail.com"
+        
+        send_mail( 
                 "SiTE Project Repository Password",
                 password,
                 from_email,
                 [user.email],
                 fail_silently=False,
             )
-        print("email sent")
         return student
     def updateStudent(self, **kwargs):
         my_view = self.context['view']
@@ -254,7 +284,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         if change_pass==True:
             password = BaseUserManager().make_random_password()
             user.set_password(password)
-            from_email = "alefewyimer2@gmail.com"
+            from_email = "misganewendeg879@gmail.com"
             send_mail(
                 "SiTE Project Repository Password",
                 password,

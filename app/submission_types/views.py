@@ -1,4 +1,4 @@
-from constants.constants import MODEL_ALREADY_EXIST, MODEL_RECORD_NOT_FOUND
+from constants.constants import MODEL_ALREADY_EXIST, MODEL_PARAM_MISSED, MODEL_RECORD_NOT_FOUND
 from core.models import Semister, SubmissionType
 from django.db import transaction
 from django_filters import rest_framework as filters
@@ -24,11 +24,25 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         print("creating ...")
         data = request.data
-        count = SubmissionType.objects.filter(name=data["name"]).count()
-        print("Count ", count)
-        if count > 0:
+        if not data["name"].isalpha() :
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "Mark")
+            res["message"]="SubmissionType name must be a sequence of valid english charactors."
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        
+        if not data["max_mark"].isdigit() :
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "Mark")
+            res["message"]="Maximum mark for Submission type must be a number."
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        
+        if float(data["max_mark"])< float(5) and float(data["max_mark"])>float(100):
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "Mark")
+            res["message"]="Offially alloted mark value for submission "+data["name"] + " is in the range of 5 and 100."
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        
+        is_exists = SubmissionType.objects.filter(name=data["name"]).exists()
+        if is_exists:
             res = error_response(request, MODEL_ALREADY_EXIST, "SubmissionType")
-            return Response(res, content_type="application/json")
+            return Response(res,status=int(res['status_code']), content_type="application/json")
         else:
             pass
         semister_obj=None
@@ -36,7 +50,9 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
             semister_obj=Semister.objects.filter(id=data["semister"]).first()
         except:
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Semister")
-            return Response(res, content_type="application/json")
+            return Response(res, status=int(res['status_code']),content_type="application/json")
+       
+       
         new_sub_type_obj = SubmissionType.objects.create(name=data["name"],semister=semister_obj,max_mark=data["max_mark"])
         serializer = SubmissionTypeSerializer(new_sub_type_obj)
         data = success_response(serializer.data)
@@ -46,10 +62,20 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
         print("updating ...")
         data = request.data
         pk = kwargs["pk"]
+        if not pk.isdigit():
+            res = error_response(request, MODEL_PARAM_MISSED, "SubmissionType")
+            res['message']='Invalid request parameter found.'
+            return Response(res,status=int(res['status_code']), content_type="application/json")
         if pk:
             pk = str(pk)
-        sub__type = SubmissionType.objects.get(name=pk)
-        if data.get("max_mark"):
+        sub__type=None
+        try:
+            sub__type = SubmissionType.objects.get(name=pk)
+        except:
+            res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "SubmissionType")
+            res['message']='SubmissionType is not found'
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        if data.get("max_mark") and float(data.get("max_mark") )!=float(0):
             sub__type.max_mark = data["max_mark"]
         else:
             pass
@@ -60,20 +86,33 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
                 sub__type.semister = semister_obj
             except:
                 res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "Semister")
-                return Response(res, content_type="application/json")
-                
+                return Response(res,status=int(res['status_code']), content_type="application/json")
         else:
             pass
         
         sub__type.save()
         serializer = SubmissionTypeSerializer(sub__type)
         return Response(serializer.data)
+    def retrieve(self, request, pk=None):
+        if not pk.isdigit():
+            res = error_response(request, MODEL_PARAM_MISSED, "SubmissionType")
+            res['message']='Invalid request parameter found.'
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        try:
+            queryset = SubmissionType.objects.get(pk=pk)
+        except:
+            res = error_response(request, MODEL_RECORD_NOT_FOUND, "SubmissionType")
+            res['message']='SubmissionType not found with id '+pk+"."
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+        serializer=SubmissionTypeSerializer(queryset)
+        return Response(serializer.data)
+
 
     def destroy(self, request, *args, **kwargs):
         print("deleting ...")
         instance = SubmissionType.objects.filter(name=str(kwargs["pk"]))
         if len(instance) != 1:
             res = error_response(self.request, MODEL_RECORD_NOT_FOUND, "SubmissionType")
-            return Response(res, content_type="application/json")
+            return Response(res, status=int(res['status_code']),content_type="application/json")
         instance.delete()
         return Response({"result": "SubmissionType instance was successfuly deleted!"})

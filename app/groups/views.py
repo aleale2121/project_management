@@ -1,5 +1,4 @@
 import json
-from tokenize import group
 
 import requests
 from constants.constants import MODEL_RECORD_NOT_FOUND, MODEL_UPDATE_FAILED
@@ -139,7 +138,18 @@ class MemberModelViewSet(viewsets.ModelViewSet):
         group = get_object_or_404(Group.objects, pk=group_pk)
         user = get_object_or_404(User.objects, username=request.data["member"])
         get_object_or_404(Student.objects, user=user.pk)
-
+        reg_member = None
+        try:
+            reg_member = Member.objects.get(member=user.pk)
+            
+            resp="student already joined "+reg_member.group.group_name
+            return Response(
+                    {"error": resp},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+        except Member.DoesNotExist:            
+            pass
         request.data["group"] = group.pk
         request.data["member"] = user.pk
 

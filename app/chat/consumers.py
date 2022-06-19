@@ -17,7 +17,7 @@ class ChatConsumer(WebsocketConsumer):
         print("chat message ==>",messages)
         content = {
             'command': 'fetch_messages',
-            'messages': self.messages_to_json(messages)
+            'message': self.messages_to_json(messages)
         }
         self.send_message(content)
 
@@ -32,9 +32,10 @@ class ChatConsumer(WebsocketConsumer):
         print("current chat ===",current_chat)
         current_chat.messages.add(message)
         current_chat.save()
+        
         content = {
             'command': 'new_message',
-            'message': self.message_to_json(message)
+            'message':[self.message_to_json(message)]
         }
         return self.send_chat_message(content)
 

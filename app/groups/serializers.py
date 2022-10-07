@@ -218,8 +218,8 @@ class GroupSerializer(serializers.ModelSerializer):
         batch = get_object_or_404(Batch.objects, pk=group.batch)
         if not batch.is_active:
             raise serializers.ValidationError({"error": "inactive group"})
-
         members_data = validated_data.pop("group_members")
+
         student_list = []
         for member_data in members_data:
             user = None

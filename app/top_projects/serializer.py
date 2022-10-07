@@ -1,17 +1,20 @@
 from os import defpath
+from numberofprojects.serializer import NumberOfVoterSerializer
 
-from core.models import TopProject, Voter
+from core.models import TopProject, Voter,NumberOfVoter
 from rest_framework import serializers
-class TopProjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TopProject
-        ordering = ['id']
-
-        fields = ["id","title","group", "batch", "doc_path","vote","description","is_approved"]
-        depth = 1
 class VoterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voter
         ordering = ['id']
-        fields = ['id',"user_id","project_id"]
-        depth = 1
+        fields =  '__all__'
+        depth = 2
+class TopProjectSerializer(serializers.ModelSerializer):
+    no_voters = NumberOfVoterSerializer(many=True)
+    class Meta:
+        model = TopProject
+        ordering = ['id']
+        fields = '__all__'
+        depth = 2
+
+

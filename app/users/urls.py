@@ -9,6 +9,7 @@ app_name = "users"
 router = routers.SimpleRouter(trailing_slash=False)
 
 router.register(r"admins", views.AdminViewSet, basename="admins")
+router.register(r"auth", views.UserPassword, basename="auth")
 router.register(r"users", views.UserViewSet, basename="users")
 router.register(r"staffs", views.StaffViewSet, basename="staffs")
 router.register(r"batches", views.BatchModelViewSet, basename="batches")

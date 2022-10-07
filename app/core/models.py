@@ -224,6 +224,8 @@ class ProjectTitle(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES.choices)
 
 
+
+
 # TopProject model
 class TopProject(models.Model):
     title = models.ForeignKey(ProjectTitle, related_name="top_projects_title", on_delete=models.CASCADE, null=True)
@@ -238,6 +240,15 @@ class TopProject(models.Model):
         db_table = "top_projects"
         unique_together = ["batch", "title"]
 
+# NumberOfVoter Models
+class NumberOfVoter(models.Model):
+    project = models.ForeignKey(TopProject, related_name="no_voters", on_delete=models.CASCADE)
+    staffs = models.IntegerField(default=0)
+    students = models.IntegerField(default=0)
+    class Meta:
+        unique_together = [
+            "project",
+        ]
 
 # Voter models
 class Voter(models.Model):
@@ -248,7 +259,8 @@ class Voter(models.Model):
         ]
 
     user_id = models.ForeignKey(User, related_name="voters", on_delete=models.CASCADE)
-    project_id = models.ForeignKey(ProjectTitle, related_name="projects", on_delete=models.CASCADE)
+    project_id = models.ForeignKey(TopProject, related_name="projects", on_delete=models.CASCADE)
+
 
 
 
@@ -262,6 +274,8 @@ class TitleDeadline(models.Model):
 
 class Contact(models.Model):
     user = models.ForeignKey(User, related_name='friends', on_delete=models.CASCADE)
+    admin = models.BooleanField(default=False)
+    owner = models.BooleanField(default=False)
     friends = models.ManyToManyField('self', blank=True)
 
     def __str__(self):
@@ -278,9 +292,10 @@ class Message(models.Model):
 
 
 class Chat(models.Model):
+    name = models.CharField(max_length=100)
     participants = models.ManyToManyField(Contact, related_name='chats', blank=True)
     messages = models.ManyToManyField(Message, blank=True)
 
     def __str__(self):
         return "{}".format(self.pk)
-
+   

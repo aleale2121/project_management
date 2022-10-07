@@ -29,7 +29,7 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
             res["message"]="SubmissionType name must be a sequence of valid english charactors."
             return Response(res,status=int(res['status_code']), content_type="application/json")
         
-        if not data["max_mark"].isdigit() :
+        if not str(data["max_mark"]).isdigit() :
             res = error_response(request, MODEL_RECORD_NOT_FOUND, "Mark")
             res["message"]="Maximum mark for Submission type must be a number."
             return Response(res,status=int(res['status_code']), content_type="application/json")
@@ -62,7 +62,7 @@ class SubmissionTypeViewSet(viewsets.ModelViewSet):
         print("updating ...")
         data = request.data
         pk = kwargs["pk"]
-        if not pk.isdigit():
+        if not str(pk).isdigit():
             res = error_response(request, MODEL_PARAM_MISSED, "SubmissionType")
             res['message']='Invalid request parameter found.'
             return Response(res,status=int(res['status_code']), content_type="application/json")

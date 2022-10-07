@@ -88,8 +88,8 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         student = None
         try:
             student = Student.objects.get(user=request.user)
-        except Student.DoesNotExist:
-            return Response({"error": "you are not student"})
+        except:
+            return Response({"error": "you are not student"},status=401)
         group = None
         try:
             group = Group.objects.get(id=id)

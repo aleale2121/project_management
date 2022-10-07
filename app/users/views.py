@@ -4,12 +4,15 @@ import csv
 from constants.constants import (
     MODEL_ALREADY_EXIST,
     MODEL_DELETE_FAILED,
+    MODEL_PARAM_MISSED,
     MODEL_RECORD_NOT_FOUND,
     MODEL_UPDATE_FAILED,
 )
 from core.models import Batch, Coordinator, Group, Member, Staff, Student, User
-from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff
+from core.permissions import IsAdmin, IsAdminOrReadOnly, IsStaff,IsAdminAndStudent
+from django.contrib.auth import authenticate
 from django.contrib.auth.base_user import BaseUserManager
+from rest_framework.permissions import IsAuthenticated
 from django.core import mail
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
@@ -137,8 +140,6 @@ class UserViewSet(ModelViewSet):
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (permissions.IsAdminUser,)
-
 
 class LogoutView(APIView):
     def post(self, request, format=None):
@@ -275,7 +276,7 @@ class StudentRegistrationModelViewSet(ModelViewSet):
         username_list = []
         email_list = []
         user_list = []
-        from_email = "alefewyimer2@gmail.com"
+        from_email = "misganewendeg879@gmail.com"
         email_message_list = []
         subject = ("SiTE Project Repository Password",)
 
@@ -283,13 +284,12 @@ class StudentRegistrationModelViewSet(ModelViewSet):
         for id_, row in enumerate(reader):
             (username, email, firstname, lastname) = row
             user = User(username=username, email=email)
-            password = "password1"
-            # password = BaseUserManager().make_random_password()
+            password = BaseUserManager().make_random_password()
             user.is_student = True
             user.set_password(password)
             user_list.append(user)
 
-            msg = "Your SiTE Project Repository password is " + password
+            msg = "SiTE Project Repository password is: " + password
 
             email_message_list.append(
                 mail.EmailMessage(
@@ -332,6 +332,99 @@ class StudentRegistrationModelViewSet(ModelViewSet):
             pass
         connection.close()
         return Response("Students registered  successfully")
+    @action(
+        detail=False,
+        methods=["POST"],
+        permission_classes=[IsAdmin],
+        url_path="add-new",
+    )
+    def add_student(self, request, pk=None):
+        form_data = request.data
+        student_id = form_data["user_id"]
+        password = BaseUserManager().make_random_password()
+        batch_obj = None
+        student_obj = None
+        if User.objects.get(id=student_id).exists() and not Student.objects.get(user=User.objects.get(id=student_id)):
+            try:
+                batch_obj = Batch.objects.get(name=form_data["batch"])
+            except:
+                res = error_response(request, MODEL_RECORD_NOT_FOUND, "Batch")
+                return Response(res, content_type="application/json")
+        try:
+            usr = User.objects.get(id=student_id)
+            subject = "Dear " + form_data["first_name"] + " " + form_data["last_name"]
+            message = password + " is your new passsword!"
+            fromMail = "misganewendeg879@gmail.com"
+            toArr = usr.email
+            student_obj = Student.objects.create(
+                user=User.objects.get(id=student_id),
+                batch=batch_obj,
+                first_name=form_data["first_name"],
+                last_name=form_data["first_name"],
+            )
+            send_mail(
+                subject,
+                message,
+                fromMail,
+                [toArr],
+                fail_silently=False,
+            )
+            serializer = StudentSerializer(student_obj)
+            return Response(serializer.data)
+        except Exception as e:
+            print("error while sending message ", e)
+            return Response({"message": "Error has occured while adding dropped out students!"},status=400)
+
+    @action(
+        detail=True,
+        methods=["DELETE"],
+        permission_classes=[IsAdmin],
+        url_path="drop",
+    )
+    def drop_student(self, request, pk=None):
+        if Student.objects.get(id=pk).exists():
+            student_obj = Student.objects.get(id=pk)
+            student_obj.delete()
+            return Response({"message": f"Student with id {student_obj.user} successfuly deleted!"})
+        else:
+            res = error_response(request, MODEL_DELETE_FAILED, "Student")
+            return Response(res, content_type="application/json",status=res['status_code'])
+
+    @action(
+        detail=False,
+        methods=["POST"],
+        permission_classes=[IsAdmin],
+        url_path="email/reset",
+    )
+    def reset_email(self, request):
+        form_data = request.data
+        password = User.objects.make_random_password() 
+        username=self.request.user.username 
+
+        if User.objects.get(username=username).exists():
+            user_obj = User.objects.filter(username=username)[0]
+            user_obj.email = form_data["email"]  
+            user_obj.set_password(password)  
+            user_obj.save(update_fields=["password","email"]) 
+            body = password + " is your secured new password."
+            from_email = "misganewendeg879@gmail.com"
+            to_email = form_data["email"]
+            subject = "Email Reset"
+            toArr = to_email
+            send_mail(
+                subject,
+                body,
+                from_email,
+                [toArr],
+                fail_silently=False,
+            )
+            return Response({"message": "Email successfuly reseted!"})
+        else:
+            res = error_response(request, MODEL_UPDATE_FAILED, "Student")
+            res['message']='Unable to reset email id'
+            return Response(res, content_type="application/json",status=res['status_code'])
+
+
 
 
 class StudentModelViewSet(ModelViewSet):
@@ -408,97 +501,7 @@ class StudentModelViewSet(ModelViewSet):
     def perform_destroy(self, instance):
         instance.delete()
 
-    @action(
-        detail=False,
-        methods=["POST"],
-        permission_classes=[IsAdmin],
-        url_path="add-new",
-    )
-    def add_student(self, request, pk=None):
-        form_data = request.data
-        student_id = form_data["user_id"]
-        password = BaseUserManager().make_random_password()
-        batch_obj = None
-        student_obj = None
-        if User.objects.get(id=student_id).exists() and not Student.objects.get(user=User.objects.get(id=student_id)):
-            try:
-                batch_obj = Batch.objects.get(name=form_data["batch"])
-            except:
-                res = error_response(request, MODEL_RECORD_NOT_FOUND, "Batch")
-                return Response(res, content_type="application/json")
-        try:
-            usr = User.objects.get(id=student_id)
-            subject = "Dear " + form_data["first_name"] + " " + form_data["last_name"]
-            message = password + " is your new passsword!"
-            fromMail = "yidegaait2010@gmail.com"
-            toArr = [usr.email]
-            student_obj = Student.objects.create(
-                user=User.objects.get(id=student_id),
-                batch=batch_obj,
-                first_name=form_data["first_name"],
-                last_name=form_data["first_name"],
-            )
-            send_mail(
-                subject,
-                message,
-                fromMail,
-                [toArr],
-                fail_silently=False,
-            )
-            serializer = StudentSerializer(student_obj)
-            return Response(serializer.data)
-        except Exception as e:
-            print("error while sending message ", e)
-            return Response({"message": "Error has occured while adding students!"})
-
-    @action(
-        detail=True,
-        methods=["DELETE"],
-        permission_classes=[IsAdmin],
-        url_path="drop",
-    )
-    def drop_student(self, request, pk=None):
-        if Student.objects.get(id=pk).exists():
-            student_obj = Student.objects.get(id=pk)
-            student_obj.delete()
-            return Response({"message": f"Student with id {student_obj.user} successfuly deleted!"})
-        else:
-            res = error_response(request, MODEL_DELETE_FAILED, "Student")
-            return Response(res, content_type="application/json")
-
-    @action(
-        detail=False,
-        methods=["POST"],
-        permission_classes=[IsAdmin],
-        url_path="email/reset",
-    )
-    def rest_email(self, request):
-        form_data = request.data
-        password = User.objects.make_random_password()  # type: ignore
-
-        if User.objects.get(username=form_data["username"]).exists():
-            user_obj = User.objects.filter(username=form_data["username"])
-            user_obj.email = form_data["email"]  # type: ignore
-            user_obj.set_password(password)  # type: ignore
-            user_obj.save(update_fields=["password"])  # type: ignore
-            body = password + " is your new password."
-            from_email = "yidegaait2010@gmail.com"
-            to_email = form_data["email"]
-            subject = "Email and Passsword Reset"
-            toArr = [to_email]
-            send_mail(
-                subject,
-                body,
-                from_email,
-                [toArr],
-                fail_silently=False,
-            )
-            return Response({"message": f"Student with username {form_data['username']} successfuly updated!"})
-        else:
-            res = error_response(request, MODEL_UPDATE_FAILED, "Student")
-            return Response(res, content_type="application/json")
-
-
+ 
 class CoordinatorModelViewSet(ModelViewSet):
     permission_classes = [IsAdmin]
     serializer_class = CoordinatorSerialzer
@@ -516,3 +519,103 @@ class CoordinatorModelViewSet(ModelViewSet):
 
     def perform_destroy(self, instance):
         instance.delete()
+        
+        
+class UserPassword(ModelViewSet):
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path="reset-password",
+    )
+    def reset_password(self, request):
+        username = request.user.username
+        form_data=request.data
+        print("logged user ==>",username)
+        print("form data ==>",form_data)
+        if len(form_data)==0:
+            res = error_response(request, MODEL_PARAM_MISSED, "Username")
+            res['message']='username field is required'
+            return Response(res,status=int(res['status_code']), content_type="application/json")
+            
+        password = User.objects.make_random_password()
+        if User.objects.filter(username=username,is_superuser=True).exists():
+            # user_obj = User.objects.filter(username=form_data["username"])[0]
+            user_obj=None
+            try:
+                user_obj = User.objects.get(username=form_data["username"])
+            except:
+                res = error_response(request, MODEL_RECORD_NOT_FOUND, "User")
+                res['message']='No logged user found!'
+                return Response(res,status=int(res['status_code']), content_type="application/json")
+            user_obj.set_password(password)  
+            user_obj.save(update_fields=["password"])
+            body = password + " is your secured new password."
+            from_email = "misganewendeg879@gmail.com"
+            to_email = user_obj.email
+            subject = "Passsword Reset"
+            toArr = to_email
+            send_mail(
+                subject,
+                body,
+                from_email,
+                [toArr],
+                fail_silently=False,
+            )
+            return Response({"message": f"Student with username {form_data['username']} successfuly updated!"})
+        else:
+            res = error_response(request, MODEL_UPDATE_FAILED, "Student")
+            res['message']="You don't have enough prmission to reset password"
+            return Response(res, content_type="application/json",status=res['status_code'])
+        
+    @action(
+        detail=False,
+        methods=["POST"],
+        permission_classes=[IsAuthenticated],
+        url_path="change-password",   
+    )
+    def change_password(self, request):
+        username = self.request.user.username
+        credentials=request.data
+        if len(credentials)==0:
+            res = error_response(request, MODEL_UPDATE_FAILED, "ChangePassword")
+            res['message']="Password field required. "
+            return Response(res, content_type="application/json",status=res['status_code'])
+        old_password=credentials['old_password'] 
+        new_password=credentials['new_password']
+        confirm_password=credentials['confirm_password']
+        if new_password!=confirm_password:
+            res = error_response(request, MODEL_UPDATE_FAILED, "ChangePassword")
+            res['message']="Password not matched. "
+            return Response(res, content_type="application/json",status=res['status_code'])
+
+
+        user = authenticate(username=username, password=old_password)
+        if user is not None: 
+            user_obj = User.objects.filter(username=username)[0]
+            user_obj.set_password(new_password)  
+            user_obj.save(update_fields=["password"])
+            body = new_password + " is your updated secured new password."
+            from_email = "misganewendeg879@gmail.com"
+            to_email = user_obj.email
+            subject = "Passsword Change"
+            toArr = to_email
+            send_mail(
+                subject,
+                body,
+                from_email,
+                [toArr],
+                fail_silently=False,
+            )
+            return Response({"message": f"{username} password successfuly updated!"})
+        else:
+            res = error_response(request, MODEL_UPDATE_FAILED, "Student")
+            res['message']="You don't have enough prmission to reset password"
+            return Response(res, content_type="application/json",status=res['status_code'])
+
+
+    
+    
+
+
+    
+    

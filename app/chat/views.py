@@ -11,8 +11,7 @@ def get_last_40_messages(chatId):
         chat = Chat.objects.get(id=chatId)
     except:
         return None 
-    return chat.messages.all().order_by('timestamp')
-
+    return chat.messages.all().order_by('-timestamp')[:5]
 
 def get_user_contact(username):
     user=None

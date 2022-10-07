@@ -195,8 +195,8 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
         )
         from_email = "misganewendeg879@gmail.com"
         send_mail(
-                "SiTE Project Repository Password",
-                password,
+                "New Password",
+                password+ " is your SiTE app password",
                 from_email,
                 [user.email],
                 fail_silently=False,
@@ -220,9 +220,9 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
         if change_pass==True:
             password = BaseUserManager().make_random_password()
             user.set_password(password)
-            from_email = "alefewyimer2@gmail.com"
+            from_email = "misganewendeg879@gmail.com"
             send_mail(
-                "SiTE Project Repository Password",
+                "New Password",
                 password,
                 from_email,
                 [user.email],
@@ -258,6 +258,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
             last_name=self.validated_data["last_name"],
         )
         from_email = "misganewendeg879@gmail.com"
+        print("==============line  261")
         
         send_mail( 
                 "SiTE Project Repository Password",
@@ -286,8 +287,8 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
             user.set_password(password)
             from_email = "misganewendeg879@gmail.com"
             send_mail(
-                "SiTE Project Repository Password",
-                password,
+                "Updated Password",
+                password+ "is your updated password for SiTE repo app",
                 from_email,
                 [user.email],
                 fail_silently=False,

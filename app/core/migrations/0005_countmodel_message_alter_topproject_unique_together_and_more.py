@@ -107,16 +107,16 @@ class Migration(migrations.Migration):
             name='semister',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='semisters', to='core.semister'),
         ),
-        migrations.CreateModel(
-            name='Voter',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('project_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='projects', to='core.projecttitle')),
-                ('user_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='voters', to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'db_table': 'voters',
-                'unique_together': {('user_id',)},
-            },
-        ),
+        # migrations.CreateModel(
+        #     name='Voter',
+        #     fields=[
+        #         ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+        #         ('project_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='projects', to='core.projecttitle')),
+        #         ('user_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='voters', to=settings.AUTH_USER_MODEL)),
+        #     ],
+        #     options={
+        #         'db_table': 'voters',
+        #         'unique_together': {('user_id',)},
+        #     },
+        # ),
     ]

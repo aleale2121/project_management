@@ -88,7 +88,6 @@ class GroupsModelViewSet(PermissionPolicyMixin, ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance):
-
         instance.delete()
 
     def check_membership(self, request, id):
@@ -111,7 +110,6 @@ class GroupsModelViewSet(PermissionPolicyMixin, ModelViewSet):
         detail=False,
         methods=["GET"],
         permission_classes=[IsStudent],
-        # url_path="(?P<batch>[^/.]+)",
     )
     def mygroup(self, request):
         groups_list = ReadGroupSerializer(Group.objects.filter(members__member__exact=request.user), many=True)
@@ -129,17 +127,12 @@ class MemberModelViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request, group_pk=None):
-        # response = self.check_membership(request, group_pk)
-        # if response != None:
-        #     return response
-
         group = get_object_or_404(Group.objects, pk=group_pk)
         user = get_object_or_404(User.objects, username=request.data["member"])
         get_object_or_404(Student.objects, user=user.pk)
         reg_member = None
         try:
             reg_member = Member.objects.get(member=user.pk)
-
             resp = "student already joined " + reg_member.group.group_name
             return Response(
                 {"error": resp},
@@ -154,9 +147,6 @@ class MemberModelViewSet(viewsets.ModelViewSet):
         return super(MemberModelViewSet, self).create(request)
 
     def update(self, request, group_pk=None, *args, **kwargs):
-        # response = self.check_membership(request, group_pk)
-        # if response != None:
-        #     return response
         group = Member.objects.get(id=group_pk)
         request.data["group"] = group.pk
         return super(MemberModelViewSet, self).update(request, *args, **kwargs)
@@ -174,9 +164,6 @@ class MemberModelViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, pk=None, group_pk=None):
-        # response = self.check_membership(request, group_pk)
-        # if response != None:
-        #     return response
         member = get_object_or_404(self.queryset, pk=pk, group__pk=group_pk)
         self.perform_destroy(member)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -321,6 +308,7 @@ class AllProjectTitleModelViewSet(ModelViewSet):
     permission_classes = (IsStudentOrReadOnly,)
     filterset_fields = [
         "group",
+        "status"
     ]
 
     def get_serializer_class(self):
@@ -331,6 +319,7 @@ class AllProjectTitleModelViewSet(ModelViewSet):
     def get_queryset(self):
         queryset = None
         batch = self.request.query_params.get("batch")
+        stat = self.request.query_params.get("status")
 
         if batch != None:
             queryset = ProjectTitle.objects.filter(group__batch__exact=batch)
@@ -343,6 +332,9 @@ class AllProjectTitleModelViewSet(ModelViewSet):
                 )
             except Batch.DoesNotExist:
                 queryset = ProjectTitle.objects.all()
+        if stat != None:
+            queryset = queryset.filter(status=stat)
+
 
         return queryset
 

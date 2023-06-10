@@ -12,6 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY_DEFAULT = "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*%tu7wd6t90b8"
 SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
+DB_HOST = os.environ.get("DB_HOST", default="db")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -105,7 +106,7 @@ CHANNEL_LAYERS = {
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "HOST": "db",
+        "HOST": DB_HOST,
         "NAME": "app",
         "USER": "postgres",
         "PASSWORD": "supersecretpassword",

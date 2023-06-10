@@ -33,7 +33,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework.authtoken",
     'django_filters',
-    'rest_framework_swagger',
     "core",
     'drf_yasg',
     "users",
@@ -106,15 +105,16 @@ CHANNEL_LAYERS = {
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "HOST": "localhost",
+        "HOST": "db",
         "NAME": "app",
         "USER": "postgres",
-        "PASSWORD": "superuserpassword",
+        "PASSWORD": "supersecretpassword",
         'ATOMIC_REQUESTS': True,
     }
 }
 
 db_from_env = dj_database_url.config(engine="django.db.backends.postgresql_psycopg2", conn_max_age=600)
+print(db_from_env)
 DATABASES["default"].update(db_from_env)
 
 # Password validation

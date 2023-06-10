@@ -8,11 +8,11 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 schema_view = get_schema_view(
    openapi.Info(
-      title="SiTE Repository API",
+      title="PMTS API",
       default_version='v2.1',
-      description="It is a SiTE final project management system",
+      description="Project management and Thesis Similarity Check API",
       terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="yidegaait2010@gmail.com"),
+      contact=openapi.Contact(email="alefewdev21@gmail.com"),
       license=openapi.License(name="MIT License"),
    ),
    public=True,

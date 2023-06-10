@@ -1,8 +1,8 @@
-#!/bin/sh
-
-# Obtained on 19-11-2019 from https://github.com/eficode/wait-for
-TIMEOUT=15
-QUIET=0
+#!/bin/sh 
+ 
+# Obtained on 19-11-2019 from https://github.com/eficode/wait-for 
+TIMEOUT=15 
+QUIET=0 
 
 echoerr() {
   if [ "$QUIET" -ne 1 ]; then printf "%s\n" "$*" 1>&2; fi

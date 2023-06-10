@@ -14,11 +14,6 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: ['3.10']
-    env:
-      DB_HOST: postgres
-      DB_NAME: app
-      DB_USER: postgres
-      DB_PASS: supersecretpassword
     services:
       postgres:
         image: postgres:14-alpine
@@ -44,6 +39,11 @@ jobs:
         pip install -r ./requirements.txt
     - name: Run Migrations
       run: python ./app/manage.py migrate
+      env:
+        DB_HOST: postgres
+        DB_NAME: app
+        DB_USER: postgres
+        DB_PASS: supersecretpassword
 
     - name: Run Tests
       run: |

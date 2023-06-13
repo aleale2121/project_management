@@ -107,7 +107,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+# .env
 .venv
 env/
 venv/
@@ -140,7 +140,7 @@ dmypy.json
 # ignore staticfiles for whitenoise
 staticfiles/
 # ignore virtual environment
-env/
+# env/
 #temp
 
 

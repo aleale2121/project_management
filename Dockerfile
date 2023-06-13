@@ -1,6 +1,5 @@
 FROM python:3.10 AS build
 
-# WORKDIR /app
 
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -15,7 +14,7 @@ COPY --from=build /opt/venv /opt/venv
 
 WORKDIR /app
 COPY ./app /app
-
+COPY ./.env /app
 
 EXPOSE 8000
 

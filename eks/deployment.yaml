@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: project-managment-api-deployment
+  name: project-managment-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-managment-api
+  template:
+    metadata:
+      labels:
+        app: project-managment-api
+    spec:
+      containers:
+      - image: 710979589756.dkr.ecr.eu-north-1.amazonaws.com/projectmanagement:fbdf02aa2b353791d776841ce546b6a2a0d483c1
+        name: project-managment-api
+        ports:
+        - containerPort: 8000
+      

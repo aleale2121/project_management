@@ -15,7 +15,7 @@ spec:
         app: project-managment-api
     spec:
       containers:
-      - image: 710979589756.dkr.ecr.eu-north-1.amazonaws.com/projectmanagement:fbdf02aa2b353791d776841ce546b6a2a0d483c1
+      - image: 710979589756.dkr.ecr.eu-north-1.amazonaws.com/projectmanagement:685ca952967e513a862eefea24b2a034ba30cfb8
         name: project-managment-api
         ports:
         - containerPort: 8000

@@ -26,4 +26,4 @@ RUN useradd -ms /bin/bash newuser
 RUN chown -R newuser:newuser /app
 USER newuser
 
-CMD gunicorn app.wsgi:application --bind 0.0.0.0:8000
+CMD gunicorn --debug app.wsgi:application --bind 0.0.0.0:8000

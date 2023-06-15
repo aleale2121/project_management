@@ -28,9 +28,9 @@ jobs:
     - name: Load Secrets and Save to .env
       run: |
         ls -la 
-        ls -la ./app/ 
-        aws secretsmanager get-secret-value --secret-id project_management --query SecretString --output text | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > ./app/app/.env 
-        ls -la ./app/app/
+        cat .env
+        aws secretsmanager get-secret-value --secret-id project_management --query SecretString --output text | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > ./.env 
+        cat .env
     # - name: Build, tag, and push docker image to Amazon ECR
     #   env:
     #     REGISTRY: ${{ steps.login-ecr.outputs.registry }}

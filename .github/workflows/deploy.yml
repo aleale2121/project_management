@@ -14,6 +14,9 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
+    
+    - name: List files
+      run: ls -la
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1

@@ -27,14 +27,15 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v1
     - name: Load Secrets and Save to .env
       run: |
+        ls -la
         aws secretsmanager get-secret-value --secret-id project_management --query SecretString --output text | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > ./.env 
         aws secretsmanager get-secret-value --secret-id project_management --query SecretString --output text | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > ./app/.env 
-    - name: Build, tag, and push docker image to Amazon ECR
-      env:
-        REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        REPOSITORY: projectmanagement
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-        docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+    # - name: Build, tag, and push docker image to Amazon ECR
+    #   env:
+    #     REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+    #     REPOSITORY: projectmanagement
+    #     IMAGE_TAG: ${{ github.sha }}
+    #   run: |
+    #     docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+    #     docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
 

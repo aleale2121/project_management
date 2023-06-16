@@ -1,5 +1,4 @@
 import os
-import dj_database_url  # type: ignore
 from distutils.debug import DEBUG
 from pathlib import Path
 from dotenv import load_dotenv
@@ -23,7 +22,6 @@ DB_PASS = str(os.environ.get("DB_PASS"))
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sfpm.herokuapp.com",'10.5.85.106']
 # ALLOWED_HOSTS = ['10.5.208.160','10.5.222.98','10.5.214.209','192.168.0.29','10.5.85.12','10.5.216.116','localhost','127.0.0.1','sfpm.herokuapp.com']
 ALLOWED_HOSTS = ['*']
 
@@ -120,10 +118,14 @@ DATABASES = {
         'ATOMIC_REQUESTS': True,
     }
 }
-
-db_from_env = dj_database_url.config(engine="django.db.backends.postgresql_psycopg2", conn_max_age=600)
-print(db_from_env)
-DATABASES["default"].update(db_from_env)
+DB_TIME_ZONE=str(os.environ.get("DB_TIME_ZONE",default=""))
+if DB_TIME_ZONE!="":
+    
+    DATABASES["default"]["TIME_ZONE"]=DB_TIME_ZONE
+    
+# db_from_env = dj_database_url.config(engine="django.db.backends.postgresql_psycopg2", conn_max_age=600)
+# print(db_from_env)
+# DATABASES["default"].update(db_from_env)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators

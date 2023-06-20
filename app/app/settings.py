@@ -118,10 +118,10 @@ DATABASES = {
         'ATOMIC_REQUESTS': True,
     }
 }
-DB_TIME_ZONE=str(os.environ.get("DB_TIME_ZONE",default=""))
-if DB_TIME_ZONE!="":
+# DB_TIME_ZONE=str(os.environ.get("DB_TIME_ZONE",default=""))
+# if DB_TIME_ZONE!="":
     
-    DATABASES["default"]["TIME_ZONE"]=DB_TIME_ZONE
+#     DATABASES["default"]["TIME_ZONE"]=DB_TIME_ZONE
     
 # db_from_env = dj_database_url.config(engine="django.db.backends.postgresql_psycopg2", conn_max_age=600)
 # print(db_from_env)

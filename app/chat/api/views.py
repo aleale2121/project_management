@@ -83,6 +83,8 @@ class ChatModelViewSet(ModelViewSet):
         data=ChatSerializer(chat_messages).data
         return Response(data)
 
+    def get_queryset(self):
+        return Chat.objects.all()
     
     @action(
         detail=False,

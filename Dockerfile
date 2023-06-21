@@ -12,11 +12,11 @@ FROM python:3.10
 ENV PATH="/opt/venv/bin:$PATH"
 COPY --from=build /opt/venv /opt/venv
 
-COPY ./.env ./.env
+# COPY ./.env ./.env
 
 WORKDIR /app
 COPY ./app/ .
-COPY .env ./app/
+# COPY .env ./app/
 
 RUN useradd -ms /bin/bash newuser
 RUN chown -R newuser:newuser /app

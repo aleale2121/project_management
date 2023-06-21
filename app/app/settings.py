@@ -1,23 +1,19 @@
 import os
 from distutils.debug import DEBUG
 from pathlib import Path
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# environ.Env.read_env(".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY_DEFAULT = "django-insecure-)9&)se2$z0-@&4j*b)_8qb$6z!9)f#@m(6imw*%tu7wd6t90b8"
-SECRET_KEY = str(os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT))
-DB_ENGINE = str(os.environ.get("DB_ENGINE", default="django.db.backends.postgresql"))
-DB_HOST = str(os.environ.get("DB_HOST", default="db"))
-DB_NAME = str(os.environ.get("DB_NAME", default="app"))
-DB_USER = str(os.environ.get("DB_USER", default="postgres"))
-DB_PASS = str(os.environ.get("DB_PASS"))
+SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
+DB_ENGINE = os.environ.get("DB_ENGINE", default="django.db.backends.postgresql")
+DB_HOST = os.environ.get("DB_HOST", default="db")
+DB_NAME = os.environ.get("DB_NAME", default="app")
+DB_USER = os.environ.get("DB_USER", default="postgres")
+DB_PASS = os.environ.get("DB_PASS")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -118,14 +114,6 @@ DATABASES = {
         'ATOMIC_REQUESTS': True,
     }
 }
-# DB_TIME_ZONE=str(os.environ.get("DB_TIME_ZONE",default=""))
-# if DB_TIME_ZONE!="":
-    
-#     DATABASES["default"]["TIME_ZONE"]=DB_TIME_ZONE
-    
-# db_from_env = dj_database_url.config(engine="django.db.backends.postgresql_psycopg2", conn_max_age=600)
-# print(db_from_env)
-# DATABASES["default"].update(db_from_env)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
